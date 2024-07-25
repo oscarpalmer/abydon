@@ -34,22 +34,41 @@ function getNodes(node) {
   return /^documentfragment$/i.test(node.constructor.name) ? [...node.childNodes] : [node];
 }
 
-// src/html.ts
-function html(strings, ...values) {
-  const parsed = parse(strings, values);
-  const templated = createTemplate(parsed);
-  return getNodes(templated);
+// src/fragment.ts
+function createFragment(strings, expressions) {
+  const data = {
+    expressions,
+    strings,
+    nodes: []
+  };
+  const instance = Object.create({
+    append(parent) {
+      if (data.nodes.length > 0) {
+        return parent.append(...data.nodes);
+      }
+      const parsed = parse(data);
+      const templated = createTemplate(parsed);
+      data.nodes.splice(0, data.nodes.length, ...getNodes(templated));
+      parent.append(...data.nodes);
+    }
+  });
+  return instance;
 }
-var parse = function(parts, values) {
-  const { length } = parts;
+
+// src/html.ts
+function html2(strings, ...values) {
+  return createFragment(strings, values);
+}
+function parse(data) {
+  const { length } = data.strings;
   let template = "";
   for (let index = 0;index < length; index += 1) {
-    const part = parts[index];
-    const value = values[index];
-    template += isNullableOrWhitespace(value) ? part : `${part}${value}`;
+    const part = data.strings[index];
+    const expression = data.expressions[index];
+    template += isNullableOrWhitespace(expression) ? part : `${part}${expression}`;
   }
   return template;
-};
+}
 export {
-  html
+  html2 as html
 };

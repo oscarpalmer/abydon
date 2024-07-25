@@ -1,26 +1,25 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
-import {createTemplate, getNodes} from './helpers/dom';
+import {createFragment, type FragmentData, type Fragment} from './fragment';
 
 export function html(
 	strings: TemplateStringsArray,
 	...values: unknown[]
-): Node[] {
-	const parsed = parse(strings, values);
-	const templated = createTemplate(parsed);
-
-	return getNodes(templated);
+): Fragment {
+	return createFragment(strings, values);
 }
 
-function parse(parts: TemplateStringsArray, values: unknown[]): string {
-	const {length} = parts;
+export function parse(data: FragmentData): string {
+	const {length} = data.strings;
 
 	let template = '';
 
 	for (let index = 0; index < length; index += 1) {
-		const part = parts[index];
-		const value = values[index];
+		const part = data.strings[index];
+		const expression = data.expressions[index];
 
-		template += isNullableOrWhitespace(value) ? part : `${part}${value}`;
+		template += isNullableOrWhitespace(expression)
+			? part
+			: `${part}${expression}`;
 	}
 
 	return template;
