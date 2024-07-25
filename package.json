@@ -4,7 +4,8 @@
 		"url": "https://oscarpalmer.se"
 	},
 	"dependencies": {
-		"@oscarpalmer/atoms": "^0.61.0"
+		"@oscarpalmer/atoms": "^0.61.0",
+		"@oscarpalmer/sentinel": "^0.22.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.8.3",
@@ -35,5 +36,5 @@
 		"watch": "bun build ./src/index.ts --outfile ./dist/index.js --watch"
 	},
 	"types": "src/types.d.ts",
-	"version": "0.4.0"
+	"version": "0.5.0"
 }

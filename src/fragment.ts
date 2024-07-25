@@ -1,14 +1,17 @@
 import {createTemplate, getNodes} from './helpers/dom';
-import {parse} from './html';
+import {getFragment, parse} from './html';
+import {mapNodes} from './node';
 
 export type Fragment = {
-	append(parent: Node): void;
+	get(): DocumentFragment;
+	remove(): void;
 };
 
 export type FragmentData = {
 	expressions: unknown[];
 	nodes: Node[];
 	strings: TemplateStringsArray;
+	values: unknown[];
 };
 
 export function createFragment(
@@ -19,22 +22,42 @@ export function createFragment(
 		expressions,
 		strings,
 		nodes: [],
+		values: [],
 	};
 
 	const instance = Object.create({
-		append(parent: ParentNode) {
-			if (data.nodes.length > 0) {
-				return parent.append(...data.nodes);
+		get(): Node {
+			if (data.nodes.length === 0) {
+				const parsed = parse(data);
+				const templated = createTemplate(parsed);
+
+				data.nodes.splice(0, data.nodes.length, ...getNodes(templated));
+
+				mapNodes(data, data.nodes);
 			}
 
-			const parsed = parse(data);
-			const templated = createTemplate(parsed);
+			return getFragment(data.nodes);
+		},
+		remove(): void {
+			const {length} = data.nodes;
 
-			data.nodes.splice(0, data.nodes.length, ...getNodes(templated));
+			for (let index = 0; index < length; index += 1) {
+				const node = data.nodes[index];
 
-			parent.append(...data.nodes);
+				node.parentNode?.removeChild(node);
+			}
+
+			data.nodes.splice(0, data.nodes.length);
 		},
 	});
 
+	Object.defineProperty(instance, '$fragment', {
+		value: true,
+	});
+
 	return instance;
+}
+
+export function isFragment(value: unknown): value is Fragment {
+	return typeof value === 'object' && value != null && '$fragment' in value;
 }
