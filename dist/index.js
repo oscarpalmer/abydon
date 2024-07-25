@@ -182,10 +182,19 @@ function setReactiveNode(comment, reactive3) {
 }
 
 // src/node/event.ts
+var getOptions = function(options) {
+  const parts = options.split(":");
+  return {
+    capture: parts.includes("c") || parts.includes("capture"),
+    once: parts.includes("o") || parts.includes("once"),
+    passive: !parts.includes("a") && !parts.includes("active")
+  };
+};
 function mapEvent(element, name, value10) {
   element.removeAttribute(name);
-  if (typeof value10 !== "function") {
-    return;
+  const [, type, options] = /^@(\w+)(?::([a-z:]+))?$/.exec(name) ?? [];
+  if (typeof value10 === "function" && type != null) {
+    element.addEventListener(type, value10, getOptions(options ?? ""));
   }
 }
 
@@ -480,7 +489,7 @@ var handleExpression = function(data2, prefix, expression) {
     }
     return `${prefix}${expressions}`;
   }
-  if (typeof expression === "object") {
+  if (typeof expression === "function" || typeof expression === "object") {
     const index = data2.values.push(expression) - 1;
     return `${prefix}<!--abydon.${index}-->`;
   }

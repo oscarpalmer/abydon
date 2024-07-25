@@ -23,7 +23,7 @@ function handleExpression(
 		return `${prefix}${expressions}`;
 	}
 
-	if (typeof expression === 'object') {
+	if (typeof expression === 'function' || typeof expression === 'object') {
 		const index = data.values.push(expression) - 1;
 
 		return `${prefix}<!--abydon.${index}-->`;
