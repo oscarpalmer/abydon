@@ -1,4 +1,5 @@
 export type Fragment = {
+    appendTo(element: Element): void;
     get(): FragmentNode[];
     remove(): void;
 };

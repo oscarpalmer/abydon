@@ -36,5 +36,5 @@
 		"watch": "bun build ./src/index.ts --outfile ./dist/index.js --watch"
 	},
 	"types": "src/types.d.ts",
-	"version": "0.5.0"
+	"version": "0.6.0"
 }

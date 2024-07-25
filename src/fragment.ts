@@ -15,6 +15,9 @@ export function createFragment(
 	};
 
 	const instance = Object.create({
+		appendTo(element: Element) {
+			element.append(...this.get());
+		},
 		get() {
 			if (data.nodes.length === 0) {
 				const parsed = parse(data);
@@ -38,7 +41,7 @@ export function createFragment(
 
 			data.nodes.splice(0, data.nodes.length);
 		},
-	});
+	} as Fragment);
 
 	Object.defineProperty(instance, '$fragment', {
 		value: true,

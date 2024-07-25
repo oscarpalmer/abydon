@@ -5,7 +5,7 @@ import {isFragment, isFragmentNode} from '../helpers';
 import {createNodes, replaceNodes} from '../helpers/dom';
 import type {FragmentNode} from '../models';
 
-export function setReactive(comment: Comment, reactive: Reactive): void {
+export function setReactiveNode(comment: Comment, reactive: Reactive): void {
 	const text = new Text();
 
 	let nodes: FragmentNode[] | undefined;

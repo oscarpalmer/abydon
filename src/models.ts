@@ -1,7 +1,8 @@
 export type Fragment = {
-	get(): FragmentNode[];
-	remove(): void;
-};
+		appendTo(element: Element): void;
+		get(): FragmentNode[];
+		remove(): void;
+	};
 
 export type FragmentData = {
 	expressions: unknown[];

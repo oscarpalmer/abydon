@@ -2,7 +2,8 @@ import {isReactive} from '@oscarpalmer/sentinel';
 import {isFragmentElement} from '../helpers';
 import {createNodes} from '../helpers/dom';
 import type {FragmentData} from '../models';
-import {setReactive} from './value';
+import {setReactiveNode} from './value';
+import {mapAttributes} from './attribute';
 
 const commentExpression = /^abydon\.(\d+)$/;
 
@@ -28,7 +29,7 @@ export function mapNodes(data: FragmentData, nodes: Node[]): void {
 		}
 
 		if (isFragmentElement(node)) {
-			// Attributes
+			mapAttributes(data, node);
 		}
 
 		if (node.hasChildNodes()) {
@@ -39,13 +40,13 @@ export function mapNodes(data: FragmentData, nodes: Node[]): void {
 
 function mapValue(comment: Comment, value: unknown): void {
 	switch (true) {
-		case isReactive(value):
-			setReactive(comment, value);
-			break;
-
 		case typeof value === 'function':
 			mapValue(comment, value());
 			return;
+
+		case isReactive(value):
+			setReactiveNode(comment, value);
+			break;
 
 		default:
 			comment.replaceWith(...createNodes(value));
