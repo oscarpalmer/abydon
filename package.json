@@ -3,11 +3,34 @@
 		"name": "Oscar Palmér",
 		"url": "https://oscarpalmer.se"
 	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.8.3",
+		"@types/bun": "^1.1.6",
+		"bun": "^1.1.20",
+		"typescript": "^5.5.4"
+	},
+	"exports": {
+		".": {
+			"types": "./types/index.d.ts",
+			"bun": "./src/index.ts",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js"
+		}
+	},
 	"license": "MIT",
+	"main": "dist/index.js",
+	"module": "dist/index.mjs",
 	"name": "@oscarpalmer/abydon",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/oscarpalmer/abydon.git"
 	},
+	"scripts": {
+		"build": "bun run clean && bunx bun ./.bun.ts && bunx bun ./.bun.ts --mjs && bun run types",
+		"clean": "rm -rf ./dist && rm -rf ./types && rm -rf ./tsconfig.tsbuildinfo",
+		"types": "bunx tsc -p ./tsconfig.json",
+		"watch": "bun build ./src/index.ts --outfile ./dist/index.js --watch"
+	},
+	"types": "src/types.d.ts",
 	"version": "0.1.0"
 }
