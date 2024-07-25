@@ -1,3 +1,18 @@
+import {getString} from '@oscarpalmer/atoms/string';
+import {isFragment} from '../fragment';
+
+export function createNode(value: unknown): Node {
+	if (value instanceof Node) {
+		return value;
+	}
+
+	if (isFragment(value)) {
+		return value.get();
+	}
+
+	return new Text(getString(value));
+}
+
 export function createTemplate(html: string): Node {
 	const template = document.createElement('template');
 

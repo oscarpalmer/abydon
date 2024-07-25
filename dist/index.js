@@ -16,6 +16,15 @@ var isNullableOrWhitespace = function(value) {
 };
 
 // src/helpers/dom.ts
+function createNode(value) {
+  if (value instanceof Node) {
+    return value;
+  }
+  if (isFragment(value)) {
+    return value.get();
+  }
+  return new Text(getString(value));
+}
 function createTemplate(html) {
   const template = document.createElement("template");
   template.innerHTML = html;
@@ -53,6 +62,45 @@ if (globalThis._sentinels == null) {
     }
   });
 }
+
+// node_modules/@oscarpalmer/sentinel/dist/effect.mjs
+var effect = function(callback) {
+  const state = {
+    callback,
+    active: false,
+    reactives: new Set
+  };
+  const instance = Object.create({
+    start() {
+      if (!state.active) {
+        state.active = true;
+        const index = globalThis._sentinels.push(state) - 1;
+        state.callback();
+        globalThis._sentinels.splice(index, 1);
+      }
+    },
+    stop() {
+      if (state.active) {
+        state.active = false;
+        for (const reactive of state.reactives) {
+          reactive.callbacks.any.delete(state);
+          for (const [key, keyed] of reactive.callbacks.values) {
+            keyed.delete(state);
+            if (keyed.size === 0) {
+              reactive.callbacks.keys.delete(key);
+            }
+          }
+        }
+        state.reactives.clear();
+      }
+    }
+  });
+  Object.defineProperty(instance, "$sentinel", {
+    value: "effect"
+  });
+  instance.start();
+  return instance;
+};
 
 // node_modules/@oscarpalmer/sentinel/dist/helpers/is.mjs
 var isReactive = function(value) {
@@ -101,24 +149,29 @@ function mapNodes(data, nodes) {
     }
   }
 }
-var mapReactive = function(comment, value10) {
+var mapReactive = function(comment, reactive3) {
+  const text = new Text;
+  effect(() => {
+    const value10 = reactive3.get();
+    const isNullable = isNullableOrWhitespace(value10);
+    text.textContent = getString(value10);
+    if (isNullable && comment.parentNode == null) {
+      text.replaceWith(comment);
+    } else if (!isNullable && text.parentNode == null) {
+      comment.replaceWith(text);
+    }
+  });
 };
 var mapValue = function(comment, value10) {
   switch (true) {
-    case value10 instanceof Node:
-      comment.replaceWith(value10);
-      return;
-    case isFragment(value10):
-      comment.replaceWith(value10.get());
-      break;
     case isReactive(value10):
       mapReactive(comment, value10);
       break;
     case typeof value10 === "function":
       mapValue(comment, value10());
       return;
-    case typeof value10 === "object":
-      comment.replaceWith(new Text(getString(value10)));
+    default:
+      comment.replaceWith(...getNodes(createNode(value10)));
       break;
   }
 };
@@ -157,7 +210,7 @@ function createFragment(strings, expressions) {
   return instance;
 }
 function isFragment(value10) {
-  return typeof value10 === "object" && value10 != null && "$fragment" in value10;
+  return typeof value10 === "object" && value10 != null && "$fragment" in value10 && value10.$fragment === true;
 }
 
 // src/html.ts

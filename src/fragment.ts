@@ -59,5 +59,10 @@ export function createFragment(
 }
 
 export function isFragment(value: unknown): value is Fragment {
-	return typeof value === 'object' && value != null && '$fragment' in value;
+	return (
+		typeof value === 'object' &&
+		value != null &&
+		'$fragment' in value &&
+		value.$fragment === true
+	);
 }

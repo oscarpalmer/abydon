@@ -1,2 +1,2 @@
-import { type FragmentData } from '../fragment';
+import type { FragmentData } from '../fragment';
 export declare function mapNodes(data: FragmentData, nodes: Node[]): void;
