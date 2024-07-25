@@ -1,0 +1,13 @@
+{
+	"author": {
+		"name": "Oscar Palmér",
+		"url": "https://oscarpalmer.se"
+	},
+	"license": "MIT",
+	"name": "@oscarpalmer/abydon",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/oscarpalmer/abydon.git"
+	},
+	"version": "0.1.0"
+}
