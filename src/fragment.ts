@@ -1,18 +1,7 @@
 import {createTemplate, getNodes} from './helpers/dom';
-import {getFragment, parse} from './html';
+import {parse} from './html';
+import type {Fragment, FragmentData} from './models';
 import {mapNodes} from './node';
-
-export type Fragment = {
-	get(): DocumentFragment;
-	remove(): void;
-};
-
-export type FragmentData = {
-	expressions: unknown[];
-	nodes: Node[];
-	strings: TemplateStringsArray;
-	values: unknown[];
-};
 
 export function createFragment(
 	strings: TemplateStringsArray,
@@ -26,7 +15,7 @@ export function createFragment(
 	};
 
 	const instance = Object.create({
-		get(): Node {
+		get() {
 			if (data.nodes.length === 0) {
 				const parsed = parse(data);
 				const templated = createTemplate(parsed);
@@ -36,9 +25,9 @@ export function createFragment(
 				mapNodes(data, data.nodes);
 			}
 
-			return getFragment(data.nodes);
+			return [...data.nodes];
 		},
-		remove(): void {
+		remove() {
 			const {length} = data.nodes;
 
 			for (let index = 0; index < length; index += 1) {
@@ -56,13 +45,4 @@ export function createFragment(
 	});
 
 	return instance;
-}
-
-export function isFragment(value: unknown): value is Fragment {
-	return (
-		typeof value === 'object' &&
-		value != null &&
-		'$fragment' in value &&
-		value.$fragment === true
-	);
 }

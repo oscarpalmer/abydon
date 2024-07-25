@@ -1,8 +1,8 @@
-import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
-import {getString} from '@oscarpalmer/atoms/string';
-import {type Reactive, effect, isReactive} from '@oscarpalmer/sentinel';
-import type {FragmentData} from '../fragment';
-import {createNode, getNodes} from '../helpers/dom';
+import {isReactive} from '@oscarpalmer/sentinel';
+import {isFragmentElement} from '../helpers';
+import {createNodes} from '../helpers/dom';
+import type {FragmentData} from '../models';
+import {setReactive} from './value';
 
 const commentExpression = /^abydon\.(\d+)$/;
 
@@ -27,7 +27,7 @@ export function mapNodes(data: FragmentData, nodes: Node[]): void {
 			continue;
 		}
 
-		if (node instanceof Element) {
+		if (isFragmentElement(node)) {
 			// Attributes
 		}
 
@@ -37,27 +37,10 @@ export function mapNodes(data: FragmentData, nodes: Node[]): void {
 	}
 }
 
-function mapReactive(comment: Comment, reactive: Reactive): void {
-	const text = new Text();
-
-	effect(() => {
-		const value = reactive.get();
-		const isNullable = isNullableOrWhitespace(value);
-
-		text.textContent = getString(value);
-
-		if (isNullable && comment.parentNode == null) {
-			text.replaceWith(comment);
-		} else if (!isNullable && text.parentNode == null) {
-			comment.replaceWith(text);
-		}
-	});
-}
-
 function mapValue(comment: Comment, value: unknown): void {
 	switch (true) {
 		case isReactive(value):
-			mapReactive(comment, value);
+			setReactive(comment, value);
 			break;
 
 		case typeof value === 'function':
@@ -65,7 +48,7 @@ function mapValue(comment: Comment, value: unknown): void {
 			return;
 
 		default:
-			comment.replaceWith(...getNodes(createNode(value)));
+			comment.replaceWith(...createNodes(value));
 			break;
 	}
 }

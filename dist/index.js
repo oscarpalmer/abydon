@@ -15,15 +15,26 @@ var isNullableOrWhitespace = function(value) {
   return value == null || /^\s*$/.test(getString(value));
 };
 
+// src/helpers/index.ts
+function isFragment(value) {
+  return typeof value === "object" && value != null && "$fragment" in value && value.$fragment === true;
+}
+function isFragmentElement(value) {
+  return value instanceof HTMLElement || value instanceof SVGElement;
+}
+function isFragmentNode(value) {
+  return value instanceof Comment || value instanceof Element || value instanceof Text;
+}
+
 // src/helpers/dom.ts
-function createNode(value) {
-  if (value instanceof Node) {
-    return value;
+function createNodes(value) {
+  if (isFragmentNode(value)) {
+    return [value];
   }
   if (isFragment(value)) {
     return value.get();
   }
-  return new Text(getString(value));
+  return [new Text(getString(value))];
 }
 function createTemplate(html) {
   const template = document.createElement("template");
@@ -41,6 +52,17 @@ function createTemplate(html) {
 }
 function getNodes(node) {
   return /^documentfragment$/i.test(node.constructor.name) ? [...node.childNodes] : [node];
+}
+function replaceNodes(from, to) {
+  const { length } = from;
+  for (let index = 0;index < length; index += 1) {
+    const node = from[index];
+    if (index === 0) {
+      node.replaceWith(...to);
+    } else {
+      node.remove();
+    }
+  }
 }
 
 // node_modules/@oscarpalmer/sentinel/node_modules/@oscarpalmer/atoms/dist/js/queue.mjs
@@ -126,12 +148,45 @@ var arrayOperations = new Set([
 // node_modules/@oscarpalmer/sentinel/dist/reactive/index.mjs
 var primitives = new Set(["boolean", "number", "string"]);
 
+// src/node/value.ts
+function setReactive(comment, reactive3) {
+  const text = new Text;
+  let nodes;
+  effect(() => {
+    const value10 = reactive3.get();
+    if (isFragment(value10) || isFragmentNode(value10)) {
+      const next = createNodes(value10);
+      if (nodes == null) {
+        if (comment.parentNode != null) {
+          replaceNodes([comment], next);
+        } else if (text.parentNode != null) {
+          replaceNodes([text], next);
+        }
+      } else {
+        replaceNodes(nodes, next);
+      }
+      nodes = next;
+      return;
+    }
+    const isNullable = isNullableOrWhitespace(value10);
+    text.textContent = getString(value10);
+    if (nodes != null) {
+      replaceNodes(nodes, [isNullable ? comment : text]);
+    } else if (isNullable && comment.parentNode == null) {
+      text.replaceWith(comment);
+    } else if (!isNullable && text.parentNode == null) {
+      comment.replaceWith(text);
+    }
+    nodes = undefined;
+  });
+}
+
 // src/node/index.ts
 var mapNode = function(data, comment) {
   const matches = commentExpression.exec(comment.textContent ?? "");
-  const value10 = matches == null ? null : data.values[+matches[1]];
-  if (value10 != null) {
-    mapValue(comment, value10);
+  const value11 = matches == null ? null : data.values[+matches[1]];
+  if (value11 != null) {
+    mapValue(comment, value11);
   }
 };
 function mapNodes(data, nodes) {
@@ -142,36 +197,23 @@ function mapNodes(data, nodes) {
       mapNode(data, node);
       continue;
     }
-    if (node instanceof Element) {
+    if (isFragmentElement(node)) {
     }
     if (node.hasChildNodes()) {
       mapNodes(data, [...node.childNodes]);
     }
   }
 }
-var mapReactive = function(comment, reactive3) {
-  const text = new Text;
-  effect(() => {
-    const value10 = reactive3.get();
-    const isNullable = isNullableOrWhitespace(value10);
-    text.textContent = getString(value10);
-    if (isNullable && comment.parentNode == null) {
-      text.replaceWith(comment);
-    } else if (!isNullable && text.parentNode == null) {
-      comment.replaceWith(text);
-    }
-  });
-};
-var mapValue = function(comment, value10) {
+var mapValue = function(comment, value11) {
   switch (true) {
-    case isReactive(value10):
-      mapReactive(comment, value10);
+    case isReactive(value11):
+      setReactive(comment, value11);
       break;
-    case typeof value10 === "function":
-      mapValue(comment, value10());
+    case typeof value11 === "function":
+      mapValue(comment, value11());
       return;
     default:
-      comment.replaceWith(...getNodes(createNode(value10)));
+      comment.replaceWith(...createNodes(value11));
       break;
   }
 };
@@ -193,7 +235,7 @@ function createFragment(strings, expressions) {
         data.nodes.splice(0, data.nodes.length, ...getNodes(templated));
         mapNodes(data, data.nodes);
       }
-      return getFragment(data.nodes);
+      return [...data.nodes];
     },
     remove() {
       const { length } = data.nodes;
@@ -209,16 +251,8 @@ function createFragment(strings, expressions) {
   });
   return instance;
 }
-function isFragment(value10) {
-  return typeof value10 === "object" && value10 != null && "$fragment" in value10 && value10.$fragment === true;
-}
 
 // src/html.ts
-function getFragment(nodes) {
-  const fragment3 = document.createDocumentFragment();
-  fragment3.append(...nodes);
-  return fragment3;
-}
 var handleExpression = function(data, prefix, expression) {
   if (isNullableOrWhitespace(expression)) {
     return prefix;

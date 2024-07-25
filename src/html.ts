@@ -1,13 +1,6 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
-import {type Fragment, type FragmentData, createFragment} from './fragment';
-
-export function getFragment(nodes: Node[]): DocumentFragment {
-	const fragment = document.createDocumentFragment();
-
-	fragment.append(...nodes);
-
-	return fragment;
-}
+import {createFragment} from './fragment';
+import type {Fragment, FragmentData} from './models';
 
 function handleExpression(
 	data: FragmentData,
