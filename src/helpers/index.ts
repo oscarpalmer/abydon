@@ -1,4 +1,5 @@
-import type {Fragment, FragmentElement, FragmentNode} from '../models';
+import type {Fragment} from '../fragment';
+import type {FragmentElement, FragmentNode} from '../models';
 
 export function isFragment(value: unknown): value is Fragment {
 	return (

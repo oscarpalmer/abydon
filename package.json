@@ -4,23 +4,30 @@
 		"url": "https://oscarpalmer.se"
 	},
 	"dependencies": {
-		"@oscarpalmer/atoms": "^0.61.0",
-		"@oscarpalmer/sentinel": "^0.22.0"
+		"@oscarpalmer/atoms": "^0.67.0",
+		"@oscarpalmer/sentinel": "^0.23.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.8.3",
 		"@types/bun": "^1.1.6",
-		"bun": "^1.1.20",
+		"bun": "^1.1.21",
+		"dts-bundle-generator": "^9.5.1",
 		"typescript": "^5.5.4"
 	},
 	"exports": {
 		".": {
-			"types": "./types/index.d.ts",
 			"bun": "./src/index.ts",
-			"import": "./dist/index.mjs",
-			"require": "./dist/index.js"
+			"import": {
+				"types": "./types/index.d.ts",
+				"default": "./dist/index.mjs"
+			},
+			"require": {
+				"types": "./types/index.d.cts",
+				"default": "./dist/index.js"
+			}
 		}
 	},
+	"files": ["dist/index.js", "dist/**/*.mjs", "src", "types"],
 	"license": "MIT",
 	"main": "dist/index.js",
 	"module": "dist/index.mjs",
@@ -32,9 +39,12 @@
 	"scripts": {
 		"build": "bun run clean && bunx bun ./.bun.ts && bunx bun ./.bun.ts --mjs && bun run types",
 		"clean": "rm -rf ./dist && rm -rf ./types && rm -rf ./tsconfig.tsbuildinfo",
-		"types": "bunx tsc -p ./tsconfig.json",
+		"types": "bun run types:cjs && bun run types:esm",
+		"types:cjs": "bunx dts-bundle-generator --out-file ./types/index.d.cts --no-check --silent ./src/index.ts",
+		"types:esm": "bunx tsc -p ./tsconfig.json",
 		"watch": "bun build ./src/index.ts --outfile ./dist/index.js --watch"
 	},
-	"types": "src/types.d.ts",
-	"version": "0.7.0"
+	"type": "module",
+	"types": "types/index.d.ts",
+	"version": "0.8.0"
 }

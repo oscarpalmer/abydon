@@ -1,51 +1,56 @@
 import {createTemplate, getNodes} from './helpers/dom';
 import {parse} from './html';
-import type {Fragment, FragmentData} from './models';
+import type {FragmentData} from './models';
 import {mapNodes} from './node';
 
-export function createFragment(
-	strings: TemplateStringsArray,
-	expressions: unknown[],
-): Fragment {
-	const data: FragmentData = {
-		expressions,
-		strings,
-		nodes: [],
-		values: [],
-	};
+export class Fragment {
+	private declare readonly $fragment = true;
+	private readonly data: FragmentData;
 
-	const instance = Object.create({
-		appendTo(element: Element) {
-			element.append(...this.get());
-		},
-		get() {
-			if (data.nodes.length === 0) {
-				const parsed = parse(data);
-				const templated = createTemplate(parsed);
+	constructor(strings: TemplateStringsArray, expressions: unknown[]) {
+		this.data = {
+			expressions,
+			strings,
+			nodes: [],
+			values: [],
+		};
+	}
 
-				data.nodes.splice(0, data.nodes.length, ...getNodes(templated));
+	/**
+	 * Appends the fragment to the given element
+	 */
+	appendTo(element: Element): void {
+		element.append(...this.get());
+	}
 
-				mapNodes(data, data.nodes);
-			}
+	/**
+	 * Gets a list of the fragment's nodes
+	 */
+	get(): Node[] {
+		if (this.data.nodes.length === 0) {
+			const parsed = parse(this.data);
+			const templated = createTemplate(parsed);
 
-			return [...data.nodes];
-		},
-		remove() {
-			const {length} = data.nodes;
+			this.data.nodes.splice(0, this.data.nodes.length, ...getNodes(templated));
 
-			for (let index = 0; index < length; index += 1) {
-				const node = data.nodes[index];
+			mapNodes(this.data, this.data.nodes);
+		}
 
-				node.parentNode?.removeChild(node);
-			}
+		return [...this.data.nodes];
+	}
 
-			data.nodes.splice(0, data.nodes.length);
-		},
-	} as Fragment);
+	/**
+	 * Removes the fragment from the DOM
+	 */
+	remove(): void {
+		const {length} = this.data.nodes;
 
-	Object.defineProperty(instance, '$fragment', {
-		value: true,
-	});
+		for (let index = 0; index < length; index += 1) {
+			const node = this.data.nodes[index];
 
-	return instance;
+			node.parentNode?.removeChild(node);
+		}
+
+		this.data.nodes.splice(0, length);
+	}
 }

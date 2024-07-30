@@ -2,8 +2,8 @@ import {isReactive} from '@oscarpalmer/sentinel';
 import {isFragmentElement} from '../helpers';
 import {createNodes} from '../helpers/dom';
 import type {FragmentData} from '../models';
-import {setReactiveNode} from './value';
 import {mapAttributes} from './attribute';
+import {setReactiveNode} from './value';
 
 const commentExpression = /^abydon\.(\d+)$/;
 

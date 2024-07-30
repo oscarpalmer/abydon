@@ -1,2 +1,2 @@
-export type {Fragment} from './models';
+export type {Fragment} from './fragment';
 export {html} from './html';

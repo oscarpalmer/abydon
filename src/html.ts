@@ -1,6 +1,6 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
-import {createFragment} from './fragment';
-import type {Fragment, FragmentData} from './models';
+import {Fragment} from './fragment';
+import type {FragmentData} from './models';
 
 function handleExpression(
 	data: FragmentData,
@@ -36,7 +36,7 @@ export function html(
 	strings: TemplateStringsArray,
 	...values: unknown[]
 ): Fragment {
-	return createFragment(strings, values);
+	return new Fragment(strings, values);
 }
 
 export function parse(data: FragmentData): string {

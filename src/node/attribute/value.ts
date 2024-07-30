@@ -1,8 +1,8 @@
+import {closest} from '@oscarpalmer/atoms/element';
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {getString} from '@oscarpalmer/atoms/string';
 import {effect, isReactive} from '@oscarpalmer/sentinel';
 import type {FragmentElement} from '../../models';
-import {closest} from '@oscarpalmer/atoms/element';
 
 const booleanAttributes = new Set([
 	'checked',

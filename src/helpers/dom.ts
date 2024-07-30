@@ -8,7 +8,7 @@ export function createNodes(value: unknown): FragmentNode[] {
 	}
 
 	if (isFragment(value)) {
-		return value.get();
+		return value.get() as FragmentNode[];
 	}
 
 	return [new Text(getString(value))];
