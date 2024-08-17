@@ -1,7 +1,7 @@
 import {isReactive} from '@oscarpalmer/sentinel';
-import {isFragmentElement} from '../helpers';
+import {isFragment, isProperElement} from '../helpers';
 import {createNodes} from '../helpers/dom';
-import type {FragmentData} from '../models';
+import type {FragmentData, ProperNode} from '../models';
 import {mapAttributes} from './attribute';
 import {setReactiveNode} from './value';
 
@@ -12,11 +12,11 @@ function mapNode(data: FragmentData, comment: Comment): void {
 	const value = matches == null ? null : data.values[+matches[1]];
 
 	if (value != null) {
-		mapValue(comment, value);
+		mapValue(data, comment, value);
 	}
 }
 
-export function mapNodes(data: FragmentData, nodes: Node[]): void {
+export function mapNodes(data: FragmentData, nodes: ProperNode[]): void {
 	const {length} = nodes;
 
 	for (let index = 0; index < length; index += 1) {
@@ -28,28 +28,44 @@ export function mapNodes(data: FragmentData, nodes: Node[]): void {
 			continue;
 		}
 
-		if (isFragmentElement(node)) {
+		if (isProperElement(node)) {
 			mapAttributes(data, node);
 		}
 
 		if (node.hasChildNodes()) {
-			mapNodes(data, [...node.childNodes]);
+			mapNodes(data, [...node.childNodes] as ProperNode[]);
 		}
 	}
 }
 
-function mapValue(comment: Comment, value: unknown): void {
+function mapValue(data: FragmentData, comment: Comment, value: unknown): void {
 	switch (true) {
 		case typeof value === 'function':
-			mapValue(comment, value());
+			mapValue(data, comment, value());
 			return;
 
 		case isReactive(value):
-			setReactiveNode(comment, value);
+			setReactiveNode(data, comment, value);
 			break;
 
 		default:
-			comment.replaceWith(...createNodes(value));
+			replaceComment(data, comment, value);
 			break;
 	}
+}
+
+function replaceComment(
+	data: FragmentData,
+	comment: Comment,
+	value: unknown,
+): void {
+	const item = data.items.find(item => item.nodes.includes(comment));
+	const nodes = createNodes(value);
+
+	if (item != null) {
+		item.fragment = isFragment(value) ? value : undefined;
+		item.nodes = nodes;
+	}
+
+	comment.replaceWith(...nodes);
 }

@@ -1,4 +1,4 @@
-import type {FragmentElement} from '../models';
+import type {ProperElement} from '../models';
 
 function getOptions(options: string): AddEventListenerOptions {
 	const parts = options.split(':');
@@ -11,7 +11,7 @@ function getOptions(options: string): AddEventListenerOptions {
 }
 
 export function mapEvent(
-	element: FragmentElement,
+	element: ProperElement,
 	name: string,
 	value: unknown,
 ): void {

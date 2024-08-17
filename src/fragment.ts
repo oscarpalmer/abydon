@@ -1,17 +1,17 @@
-import {createTemplate, getNodes} from './helpers/dom';
+import {html} from '@oscarpalmer/toretto/html';
 import {parse} from './html';
-import type {FragmentData} from './models';
+import type {FragmentData, ProperNode} from './models';
 import {mapNodes} from './node';
 
 export class Fragment {
-	private declare readonly $fragment = true;
+	private readonly $fragment = true;
 	private readonly data: FragmentData;
 
 	constructor(strings: TemplateStringsArray, expressions: unknown[]) {
 		this.data = {
 			expressions,
 			strings,
-			nodes: [],
+			items: [],
 			values: [],
 		};
 	}
@@ -27,30 +27,52 @@ export class Fragment {
 	 * Gets a list of the fragment's nodes
 	 */
 	get(): Node[] {
-		if (this.data.nodes.length === 0) {
+		if (this.data.items.length === 0) {
 			const parsed = parse(this.data);
-			const templated = createTemplate(parsed);
 
-			this.data.nodes.splice(0, this.data.nodes.length, ...getNodes(templated));
+			const templated = html(parsed, {
+				sanitiseBooleanAttributes: false,
+			});
 
-			mapNodes(this.data, this.data.nodes);
+			this.data.items.splice(
+				0,
+				this.data.items.length,
+				...templated.map(node => ({
+					nodes: [node as ProperNode],
+				})),
+			);
+
+			mapNodes(
+				this.data,
+				this.data.items.flatMap(
+					item => item.fragment?.get() ?? item.nodes,
+				) as ProperNode[],
+			);
 		}
 
-		return [...this.data.nodes];
+		return [
+			...(this.data.items.flatMap(
+				item => item.fragment?.get() ?? item.nodes,
+			) as ProperNode[]),
+		];
 	}
 
 	/**
 	 * Removes the fragment from the DOM
 	 */
 	remove(): void {
-		const {length} = this.data.nodes;
+		const {length} = this.data.items;
 
 		for (let index = 0; index < length; index += 1) {
-			const node = this.data.nodes[index];
+			const item = this.data.items[index];
 
-			node.parentNode?.removeChild(node);
+			item.fragment?.remove();
+
+			for (const node of item.nodes) {
+				node.remove();
+			}
 		}
 
-		this.data.nodes.splice(0, length);
+		this.data.items.splice(0, length);
 	}
 }

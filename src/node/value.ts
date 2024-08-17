@@ -1,48 +1,87 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
 import {getString} from '@oscarpalmer/atoms/string';
 import {type Reactive, effect} from '@oscarpalmer/sentinel';
-import {isFragment, isFragmentNode} from '../helpers';
+import type {Fragment} from '../fragment';
+import {isFragment, isProperNode} from '../helpers';
 import {createNodes, replaceNodes} from '../helpers/dom';
-import type {FragmentNode} from '../models';
+import type {FragmentData, ProperNode} from '../models';
 
-export function setReactiveNode(comment: Comment, reactive: Reactive): void {
+function setNodes(
+	nodes: ProperNode[] | undefined,
+	comment: Comment,
+	text: Text,
+	value: Fragment | ProperNode,
+): ProperNode[] {
+	const next = createNodes(value);
+
+	if (nodes == null) {
+		if (comment.parentNode != null) {
+			replaceNodes([comment], next);
+		} else if (text.parentNode != null) {
+			replaceNodes([text], next);
+		}
+	} else {
+		replaceNodes(nodes, next);
+	}
+
+	return next;
+}
+
+export function setReactiveNode(
+	data: FragmentData,
+	comment: Comment,
+	reactive: Reactive,
+): void {
+	const item = data.items.find(item => item.nodes.includes(comment));
 	const text = new Text();
 
-	let nodes: FragmentNode[] | undefined;
+	let nodes: ProperNode[] | undefined;
 
 	effect(() => {
 		const value = reactive.get();
 
-		if (isFragment(value) || isFragmentNode(value)) {
-			const next = createNodes(value);
+		const valueIsFragment = isFragment(value);
 
-			if (nodes == null) {
-				if (comment.parentNode != null) {
-					replaceNodes([comment], next);
-				} else if (text.parentNode != null) {
-					replaceNodes([text], next);
-				}
-			} else {
-				replaceNodes(nodes, next);
-			}
-
-			nodes = next;
-
-			return;
+		if (valueIsFragment || isProperNode(value)) {
+			nodes = setNodes(nodes, comment, text, value);
+		} else {
+			nodes = setText(nodes, comment, text, value) ? [text] : undefined;
 		}
 
-		const isNullable = isNullableOrWhitespace(value);
-
-		text.textContent = getString(value);
-
-		if (nodes != null) {
-			replaceNodes(nodes, [isNullable ? comment : text]);
-		} else if (isNullable && comment.parentNode == null) {
-			text.replaceWith(comment);
-		} else if (!isNullable && text.parentNode == null) {
-			comment.replaceWith(text);
+		if (item != null) {
+			item.fragment = valueIsFragment ? value : undefined;
+			item.nodes = [...(nodes ?? [comment])];
 		}
-
-		nodes = undefined;
 	});
+}
+
+function setText(
+	nodes: ProperNode[] | undefined,
+	comment: Comment,
+	text: Text,
+	value: unknown,
+): boolean {
+	const isNullable = isNullableOrWhitespace(value);
+
+	text.textContent = isNullable ? '' : getString(value);
+
+	if (nodes != null) {
+		replaceNodes(nodes, [isNullable ? comment : text]);
+
+		return !isNullable;
+	}
+
+	if (isNullable && comment.parentNode == null) {
+		text.replaceWith(comment);
+
+		return false;
+	}
+
+	if (!isNullable && text.parentNode == null) {
+		comment.replaceWith(text);
+
+		return true;
+	}
+
+	return false;
 }

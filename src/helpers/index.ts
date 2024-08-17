@@ -1,5 +1,5 @@
 import type {Fragment} from '../fragment';
-import type {FragmentElement, FragmentNode} from '../models';
+import type {ProperElement, ProperNode} from '../models';
 
 export function isFragment(value: unknown): value is Fragment {
 	return (
@@ -10,14 +10,10 @@ export function isFragment(value: unknown): value is Fragment {
 	);
 }
 
-export function isFragmentElement(value: unknown): value is FragmentElement {
+export function isProperElement(value: unknown): value is ProperElement {
 	return value instanceof HTMLElement || value instanceof SVGElement;
 }
 
-export function isFragmentNode(value: unknown): value is FragmentNode {
-	return (
-		value instanceof Comment ||
-		value instanceof Element ||
-		value instanceof Text
-	);
+export function isProperNode(value: unknown): value is ProperNode {
+	return value instanceof CharacterData || value instanceof Element;
 }

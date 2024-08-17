@@ -1,48 +1,20 @@
 import {getString} from '@oscarpalmer/atoms/string';
-import type {FragmentNode} from '../models';
-import {isFragment, isFragmentNode} from './index';
+import type {ProperNode} from '../models';
+import {isFragment, isProperNode} from './index';
 
-export function createNodes(value: unknown): FragmentNode[] {
-	if (isFragmentNode(value)) {
-		return [value];
+export function createNodes(value: unknown): ProperNode[] {
+	if (isFragment(value)) {
+		return value.get() as ProperNode[];
 	}
 
-	if (isFragment(value)) {
-		return value.get() as FragmentNode[];
+	if (isProperNode(value)) {
+		return [value];
 	}
 
 	return [new Text(getString(value))];
 }
 
-export function createTemplate(html: string): Node {
-	const template = document.createElement('template');
-
-	template.innerHTML = html;
-
-	const cloned = template.content.cloneNode(true);
-
-	const scripts = [
-		...(cloned instanceof Element ? cloned.querySelectorAll('script') : []),
-	];
-
-	const {length} = scripts;
-
-	for (let index = 0; index < length; index += 1) {
-		scripts[index].remove();
-	}
-
-	cloned.normalize();
-
-	return cloned;
-}
-
-export function getNodes(node: Node): Node[] {
-	return /^documentfragment$/i.test(node.constructor.name)
-		? [...node.childNodes]
-		: [node];
-}
-
-export function replaceNodes(from: FragmentNode[], to: FragmentNode[]): void {
+export function replaceNodes(from: ProperNode[], to: ProperNode[]): void {
 	const {length} = from;
 
 	for (let index = 0; index < length; index += 1) {

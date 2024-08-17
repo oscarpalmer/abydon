@@ -14,58 +14,155 @@ function getString(value2) {
 function isNullableOrWhitespace(value2) {
   return value2 == null || /^\s*$/.test(getString(value2));
 }
-
-// src/helpers/index.ts
-function isFragment(value2) {
-  return typeof value2 === "object" && value2 != null && "$fragment" in value2 && value2.$fragment === true;
-}
-function isFragmentElement(value2) {
-  return value2 instanceof HTMLElement || value2 instanceof SVGElement;
-}
-function isFragmentNode(value2) {
-  return value2 instanceof Comment || value2 instanceof Element || value2 instanceof Text;
-}
-
-// src/helpers/dom.ts
-function createNodes(value2) {
-  if (isFragmentNode(value2)) {
-    return [value2];
+// node_modules/@oscarpalmer/toretto/node_modules/@oscarpalmer/atoms/dist/js/string/index.mjs
+function getString2(value3) {
+  if (typeof value3 === "string") {
+    return value3;
   }
-  if (isFragment(value2)) {
-    return value2.get();
+  if (typeof value3 !== "object" || value3 == null) {
+    return String(value3);
   }
-  return [new Text(getString(value2))];
+  const valueOff = value3.valueOf?.() ?? value3;
+  const asString = valueOff?.toString?.() ?? String(valueOff);
+  return asString.startsWith("[object ") ? JSON.stringify(value3) : asString;
 }
+// node_modules/@oscarpalmer/toretto/node_modules/@oscarpalmer/atoms/dist/js/is.mjs
+function isPlainObject2(value3) {
+  if (typeof value3 !== "object" || value3 === null) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value3);
+  return (prototype === null || prototype === Object.prototype || Object.getPrototypeOf(prototype) === null) && !(Symbol.toStringTag in value3) && !(Symbol.iterator in value3);
+}
+
+// node_modules/@oscarpalmer/toretto/dist/attribute.mjs
+function isBadAttribute(attribute) {
+  return onPrefix.test(attribute.name) || sourcePrefix.test(attribute.name) && valuePrefix.test(attribute.value);
+}
+function isBooleanAttribute(name) {
+  return booleanAttributes.includes(name.toLowerCase());
+}
+function isEmptyNonBooleanAttribute(attribute) {
+  return !booleanAttributes.includes(attribute.name) && attribute.value.trim().length === 0;
+}
+function isInvalidBooleanAttribute(attribute) {
+  if (!booleanAttributes.includes(attribute.name)) {
+    return true;
+  }
+  const normalised = attribute.value.toLowerCase().trim();
+  return !(normalised.length === 0 || normalised === attribute.name || attribute.name === "hidden" && normalised === "until-found");
+}
+function setAttribute(element, first, second) {
+  if (isPlainObject2(first) && typeof first?.name === "string") {
+    setAttributeValue(element, first.name, first.value);
+  } else if (typeof first === "string") {
+    setAttributeValue(element, first, second);
+  }
+}
+function setAttributeValue(element, name, value3) {
+  if (value3 == null) {
+    element.removeAttribute(name);
+  } else {
+    element.setAttribute(name, typeof value3 === "string" ? value3 : getString2(value3));
+  }
+}
+var booleanAttributes = Object.freeze([
+  "async",
+  "autofocus",
+  "autoplay",
+  "checked",
+  "controls",
+  "default",
+  "defer",
+  "disabled",
+  "formnovalidate",
+  "hidden",
+  "inert",
+  "ismap",
+  "itemscope",
+  "loop",
+  "multiple",
+  "muted",
+  "nomodule",
+  "novalidate",
+  "open",
+  "playsinline",
+  "readonly",
+  "required",
+  "reversed",
+  "selected"
+]);
+var onPrefix = /^on/i;
+var sourcePrefix = /^(href|src|xlink:href)$/i;
+var valuePrefix = /(data:text\/html|javascript:)/i;
+
+// node_modules/@oscarpalmer/toretto/dist/sanitise.mjs
+function sanitise(value3, options) {
+  return sanitiseNodes(Array.isArray(value3) ? value3 : [value3], {
+    sanitiseBooleanAttributes: options?.sanitiseBooleanAttributes ?? true
+  });
+}
+function sanitiseAttributes(element, attributes, options) {
+  const { length } = attributes;
+  for (let index = 0;index < length; index += 1) {
+    const attribute2 = attributes[index];
+    if (isBadAttribute(attribute2) || isEmptyNonBooleanAttribute(attribute2)) {
+      element.removeAttribute(attribute2.name);
+    } else if (options.sanitiseBooleanAttributes && isInvalidBooleanAttribute(attribute2)) {
+      element.setAttribute(attribute2.name, "");
+    }
+  }
+}
+function sanitiseNodes(nodes, options) {
+  const { length } = nodes;
+  for (let index = 0;index < length; index += 1) {
+    const node = nodes[index];
+    if (node instanceof Element) {
+      sanitiseAttributes(node, [...node.attributes], options);
+    }
+    sanitiseNodes([...node.childNodes], options);
+  }
+  return nodes;
+}
+
+// node_modules/@oscarpalmer/toretto/dist/html.mjs
 function createTemplate(html) {
-  const template2 = document.createElement("template");
-  template2.innerHTML = html;
-  const cloned = template2.content.cloneNode(true);
-  const scripts = [
-    ...cloned instanceof Element ? cloned.querySelectorAll("script") : []
-  ];
+  const template3 = document.createElement("template");
+  template3.innerHTML = html;
+  templates[html] = template3;
+  return template3;
+}
+function getTemplate(value3) {
+  if (value3.trim().length === 0) {
+    return;
+  }
+  let template3;
+  if (/^[\w-]+$/.test(value3)) {
+    template3 = document.querySelector(`#${value3}`);
+  }
+  if (template3 instanceof HTMLTemplateElement) {
+    return template3;
+  }
+  return templates[value3] ?? createTemplate(value3);
+}
+function html(value3, sanitisation) {
+  const options = sanitisation == null || sanitisation === true ? {} : isPlainObject2(sanitisation) ? { ...sanitisation } : null;
+  const template3 = value3 instanceof HTMLTemplateElement ? value3 : typeof value3 === "string" ? getTemplate(value3) : null;
+  if (template3 == null) {
+    return [];
+  }
+  const cloned = template3.content.cloneNode(true);
+  const scripts = cloned.querySelectorAll("script");
   const { length } = scripts;
   for (let index = 0;index < length; index += 1) {
     scripts[index].remove();
   }
   cloned.normalize();
-  return cloned;
+  return options != null ? sanitise([...cloned.childNodes], options) : [...cloned.childNodes];
 }
-function getNodes(node) {
-  return /^documentfragment$/i.test(node.constructor.name) ? [...node.childNodes] : [node];
-}
-function replaceNodes(from, to) {
-  const { length } = from;
-  for (let index = 0;index < length; index += 1) {
-    const node = from[index];
-    if (index === 0) {
-      node.replaceWith(...to);
-    } else {
-      node.remove();
-    }
-  }
-}
+var templates = {};
 
-// node_modules/@oscarpalmer/atoms/dist/js/queue.mjs
+// node_modules/@oscarpalmer/sentinel/node_modules/@oscarpalmer/atoms/dist/js/queue.mjs
 if (globalThis._atomic_queued == null) {
   const queued = new Set;
   Object.defineProperty(globalThis, "_atomic_queued", {
@@ -126,11 +223,11 @@ class Effect {
 }
 
 // node_modules/@oscarpalmer/sentinel/dist/helpers/is.mjs
-function isReactive(value2) {
-  return isSentinel(value2, /^array|computed|signal|store$/i);
+function isReactive(value3) {
+  return isSentinel(value3, /^array|computed|signal|store$/i);
 }
-function isSentinel(value2, expression) {
-  return expression.test(value2?.$sentinel ?? "");
+function isSentinel(value3, expression) {
+  return expression.test(value3?.$sentinel ?? "");
 }
 
 // node_modules/@oscarpalmer/sentinel/dist/helpers/value.mjs
@@ -145,9 +242,41 @@ var arrayOperations = new Set([
   "splice",
   "unshift"
 ]);
-
 // node_modules/@oscarpalmer/sentinel/dist/reactive/index.mjs
 var primitives = new Set(["boolean", "number", "string"]);
+
+// src/helpers/index.ts
+function isFragment(value11) {
+  return typeof value11 === "object" && value11 != null && "$fragment" in value11 && value11.$fragment === true;
+}
+function isProperElement(value11) {
+  return value11 instanceof HTMLElement || value11 instanceof SVGElement;
+}
+function isProperNode(value11) {
+  return value11 instanceof CharacterData || value11 instanceof Element;
+}
+
+// src/helpers/dom.ts
+function createNodes(value11) {
+  if (isFragment(value11)) {
+    return value11.get();
+  }
+  if (isProperNode(value11)) {
+    return [value11];
+  }
+  return [new Text(getString(value11))];
+}
+function replaceNodes(from, to) {
+  const { length } = from;
+  for (let index = 0;index < length; index += 1) {
+    const node = from[index];
+    if (index === 0) {
+      node.replaceWith(...to);
+    } else {
+      node.remove();
+    }
+  }
+}
 
 // src/node/event.ts
 function getOptions(options) {
@@ -158,145 +287,74 @@ function getOptions(options) {
     passive: !parts.includes("a") && !parts.includes("active")
   };
 }
-function mapEvent(element, name, value9) {
+function mapEvent(element, name, value11) {
   element.removeAttribute(name);
   const [, type, options] = /^@(\w+)(?::([a-z:]+))?$/.exec(name) ?? [];
-  if (typeof value9 === "function" && type != null) {
-    element.addEventListener(type, value9, getOptions(options ?? ""));
+  if (typeof value11 === "function" && type != null) {
+    element.addEventListener(type, value11, getOptions(options ?? ""));
   }
 }
 
-// node_modules/@oscarpalmer/atoms/dist/js/element/closest.mjs
-function calculateDistance(origin, target) {
-  if (origin === target || origin.parentElement === target) {
-    return 0;
-  }
-  const comparison = origin.compareDocumentPosition(target);
-  const children = [...origin.parentElement?.children ?? []];
-  switch (true) {
-    case children.includes(target):
-      return Math.abs(children.indexOf(origin) - children.indexOf(target));
-    case !!(comparison & 2 || comparison & 8):
-      return traverse(origin, target);
-    case !!(comparison & 4 || comparison & 16):
-      return traverse(target, origin);
-    default:
-      return -1;
-  }
-}
-function closest(origin, selector, context) {
-  if (origin.matches(selector)) {
-    return [origin];
-  }
-  const elements = [...(context ?? document).querySelectorAll(selector)];
-  const { length } = elements;
-  if (length === 0) {
-    return [];
-  }
-  const distances = [];
-  let minimum = null;
-  for (let index = 0;index < length; index += 1) {
-    const element = elements[index];
-    const distance = calculateDistance(origin, element);
-    if (distance < 0) {
-      continue;
-    }
-    if (minimum == null || distance < minimum) {
-      minimum = distance;
-    }
-    distances.push({
-      distance,
-      element
-    });
-  }
-  return minimum == null ? [] : distances.filter((found) => found.distance === minimum).map((found) => found.element);
-}
-function traverse(from, to) {
-  const children = [...to.children];
-  if (children.includes(from)) {
-    return children.indexOf(from) + 1;
-  }
-  let current = from;
-  let distance = 0;
-  let parent = from.parentElement;
-  while (parent != null) {
-    if (parent === to) {
-      return distance + 1;
-    }
-    const children2 = [...parent.children ?? []];
-    if (children2.includes(to)) {
-      return distance + Math.abs(children2.indexOf(current) - children2.indexOf(to));
-    }
-    const index = children2.findIndex((child) => child.contains(to));
-    if (index > -1) {
-      return distance + Math.abs(index - children2.indexOf(current)) + traverse(to, children2[index]);
-    }
-    current = parent;
-    distance += 1;
-    parent = parent.parentElement;
-  }
-  return -1e6;
-}
 // src/node/attribute/value.ts
-function setAttribute(element2, name, value9) {
-  element2.removeAttribute(name);
+function setAttribute2(element, name, value11) {
+  element.removeAttribute(name);
   switch (true) {
     case classPattern.test(name):
-      setClasses(element2, name, value9);
+      setClasses(element, name, value11);
       return;
     case stylePattern.test(name):
-      setStyle(element2, name, value9);
+      setStyle(element, name, value11);
       return;
     default:
-      setValue3(element2, name, value9);
+      setValue5(element, name, value11);
       break;
   }
 }
-function setClasses(element2, name, value9) {
-  function update(value10) {
-    if (/^(|true)$/.test(getString(value10))) {
-      element2.classList.add(...classes);
+function setClasses(element, name, value11) {
+  function update(value12) {
+    if (/^(|true)$/.test(getString(value12))) {
+      element.classList.add(...classes);
     } else {
-      element2.classList.remove(...classes);
+      element.classList.remove(...classes);
     }
   }
   const classes = name.slice(6).split(".");
-  if (isReactive(value9)) {
+  if (isReactive(value11)) {
     effect(() => {
-      update(value9.get());
+      update(value11.get());
     });
   } else {
-    update(value9);
+    update(value11);
   }
 }
-function setStyle(element2, name, value9) {
-  function update(value10) {
-    if (value10 == null || value10 === false || value10 === true && unit == null) {
-      element2.style.removeProperty(property);
+function setStyle(element, name, value11) {
+  function update(value12) {
+    if (value12 == null || value12 === false || value12 === true && unit == null) {
+      element.style.removeProperty(property);
     } else {
-      element2.style.setProperty(property, value10 === true ? unit : getString(value10));
+      element.style.setProperty(property, value12 === true ? unit : getString(value12));
     }
   }
   const [, property, unit] = /^\w+\.([a-z-]+)(?:\.(\w+))?$/i.exec(name) ?? [];
   if (property == null) {
     return;
   }
-  if (isReactive(value9)) {
+  if (isReactive(value11)) {
     effect(() => {
-      update(value9.get());
+      update(value11.get());
     });
   } else {
-    update(value9);
+    update(value11);
   }
 }
-function setValue3(element2, name, value9) {
-  const callback = booleanAttributes.has(name) && name in element2 ? name === "selected" ? updateSelected(element2) : updateProperty : updateAttribute;
-  if (isReactive(value9)) {
+function setValue5(element, name, value11) {
+  const callback = isBooleanAttribute(name) && name in element ? name === "selected" ? updateSelected : updateProperty : setAttribute;
+  if (isReactive(value11)) {
     effect(() => {
-      callback(element2, name, value9.get());
+      callback(element, name, value11.get());
     });
   } else {
-    callback(element2, name, value9);
+    callback(element, name, value11);
   }
 }
 function triggerSelectChange(select) {
@@ -304,184 +362,193 @@ function triggerSelectChange(select) {
     select.dispatchEvent(new Event("change", { bubbles: true }));
   }
 }
-function updateAttribute(element2, name, value9) {
-  if (value9 == null) {
-    element2.removeAttribute(name);
-  } else {
-    element2.setAttribute(name, getString(value9));
-  }
+function updateProperty(element, name, value11) {
+  element[name] = /^(|true)$/.test(getString(value11));
 }
-function updateProperty(element2, name, value9) {
-  element2[name] = /^(|true)$/.test(getString(value9));
-}
-function updateSelected(element2) {
-  const select = closest(element2, "select")[0];
+function updateSelected(element, name, value11) {
+  const select = element.closest("select");
   const options = [...select?.options ?? []];
-  return (element3, name, value9) => {
-    if (select != null && options.includes(element3)) {
-      triggerSelectChange(select);
-    }
-    updateProperty(element3, name, value9);
-  };
+  if (select != null && options.includes(element)) {
+    triggerSelectChange(select);
+  }
+  updateProperty(element, name, value11);
 }
-var booleanAttributes = new Set([
-  "checked",
-  "disabled",
-  "hidden",
-  "inert",
-  "multiple",
-  "open",
-  "readOnly",
-  "required",
-  "selected"
-]);
 var classPattern = /^class\./;
 var stylePattern = /^style\./;
 
 // src/node/attribute/index.ts
-function getValue3(data2, original) {
+function getValue5(data, original) {
   const matches = commentExpression.exec(original ?? "");
-  return matches == null ? original : data2.values[+matches[1]];
+  return matches == null ? original : data.values[+matches[1]];
 }
-function isBadAttribute(name, value10) {
-  return /^on/i.test(name) || /^(href|src|xlink:href)$/i.test(name) && /(data:text\/html|javascript:)/i.test(value10);
-}
-function mapAttributes(data2, element2) {
-  const attributes = [...element2.attributes];
+function mapAttributes(data, element) {
+  const attributes = [...element.attributes];
   const { length } = attributes;
   for (let index = 0;index < length; index += 1) {
-    const { name, value: value10 } = attributes[index];
-    if (isBadAttribute(name, value10)) {
-      element2.removeAttribute(name);
-      continue;
-    }
-    const actual = getValue3(data2, value10);
+    const { name, value: value12 } = attributes[index];
+    const actual = getValue5(data, value12);
     if (name.startsWith("@")) {
-      mapEvent(element2, name, actual);
+      mapEvent(element, name, actual);
     } else if (name.includes(".") || isReactive(actual)) {
-      mapValue(element2, name, actual);
+      mapValue(element, name, actual);
     }
   }
 }
-function mapValue(element2, name, value10) {
+function mapValue(element, name, value12) {
   switch (true) {
-    case typeof value10 === "function":
-      mapValue(element2, name, value10());
+    case typeof value12 === "function":
+      mapValue(element, name, value12());
       return;
     default:
-      setAttribute(element2, name, value10);
+      setAttribute2(element, name, value12);
       break;
   }
 }
 var commentExpression = /^<!--abydon\.(\d+)-->$/;
 
 // src/node/value.ts
-function setReactiveNode(comment, reactive3) {
+function setNodes(nodes, comment, text, value12) {
+  const next = createNodes(value12);
+  if (nodes == null) {
+    if (comment.parentNode != null) {
+      replaceNodes([comment], next);
+    } else if (text.parentNode != null) {
+      replaceNodes([text], next);
+    }
+  } else {
+    replaceNodes(nodes, next);
+  }
+  return next;
+}
+function setReactiveNode(data, comment, reactive3) {
+  const item = data.items.find((item2) => item2.nodes.includes(comment));
   const text = new Text;
   let nodes;
   effect(() => {
-    const value10 = reactive3.get();
-    if (isFragment(value10) || isFragmentNode(value10)) {
-      const next = createNodes(value10);
-      if (nodes == null) {
-        if (comment.parentNode != null) {
-          replaceNodes([comment], next);
-        } else if (text.parentNode != null) {
-          replaceNodes([text], next);
-        }
-      } else {
-        replaceNodes(nodes, next);
-      }
-      nodes = next;
-      return;
+    const value12 = reactive3.get();
+    const valueIsFragment = isFragment(value12);
+    if (valueIsFragment || isProperNode(value12)) {
+      nodes = setNodes(nodes, comment, text, value12);
+    } else {
+      nodes = setText(nodes, comment, text, value12) ? [text] : undefined;
     }
-    const isNullable = isNullableOrWhitespace(value10);
-    text.textContent = getString(value10);
-    if (nodes != null) {
-      replaceNodes(nodes, [isNullable ? comment : text]);
-    } else if (isNullable && comment.parentNode == null) {
-      text.replaceWith(comment);
-    } else if (!isNullable && text.parentNode == null) {
-      comment.replaceWith(text);
+    if (item != null) {
+      item.fragment = valueIsFragment ? value12 : undefined;
+      item.nodes = [...nodes ?? [comment]];
     }
-    nodes = undefined;
   });
+}
+function setText(nodes, comment, text, value12) {
+  const isNullable = isNullableOrWhitespace(value12);
+  text.textContent = isNullable ? "" : getString(value12);
+  if (nodes != null) {
+    replaceNodes(nodes, [isNullable ? comment : text]);
+    return !isNullable;
+  }
+  if (isNullable && comment.parentNode == null) {
+    text.replaceWith(comment);
+    return false;
+  }
+  if (!isNullable && text.parentNode == null) {
+    comment.replaceWith(text);
+    return true;
+  }
+  return false;
 }
 
 // src/node/index.ts
-function mapNode(data2, comment) {
+function mapNode(data, comment) {
   const matches = commentExpression2.exec(comment.textContent ?? "");
-  const value11 = matches == null ? null : data2.values[+matches[1]];
-  if (value11 != null) {
-    mapValue2(comment, value11);
+  const value13 = matches == null ? null : data.values[+matches[1]];
+  if (value13 != null) {
+    mapValue2(data, comment, value13);
   }
 }
-function mapNodes(data2, nodes) {
+function mapNodes(data, nodes) {
   const { length } = nodes;
   for (let index = 0;index < length; index += 1) {
     const node = nodes[index];
     if (node instanceof Comment) {
-      mapNode(data2, node);
+      mapNode(data, node);
       continue;
     }
-    if (isFragmentElement(node)) {
-      mapAttributes(data2, node);
+    if (isProperElement(node)) {
+      mapAttributes(data, node);
     }
     if (node.hasChildNodes()) {
-      mapNodes(data2, [...node.childNodes]);
+      mapNodes(data, [...node.childNodes]);
     }
   }
 }
-function mapValue2(comment, value11) {
+function mapValue2(data, comment, value13) {
   switch (true) {
-    case typeof value11 === "function":
-      mapValue2(comment, value11());
+    case typeof value13 === "function":
+      mapValue2(data, comment, value13());
       return;
-    case isReactive(value11):
-      setReactiveNode(comment, value11);
+    case isReactive(value13):
+      setReactiveNode(data, comment, value13);
       break;
     default:
-      comment.replaceWith(...createNodes(value11));
+      replaceComment(data, comment, value13);
       break;
   }
+}
+function replaceComment(data, comment, value13) {
+  const item = data.items.find((item2) => item2.nodes.includes(comment));
+  const nodes = createNodes(value13);
+  if (item != null) {
+    item.fragment = isFragment(value13) ? value13 : undefined;
+    item.nodes = nodes;
+  }
+  comment.replaceWith(...nodes);
 }
 var commentExpression2 = /^abydon\.(\d+)$/;
 
 // src/fragment.ts
 class Fragment {
+  $fragment = true;
   data;
   constructor(strings, expressions) {
     this.data = {
       expressions,
       strings,
-      nodes: [],
+      items: [],
       values: []
     };
   }
-  appendTo(element2) {
-    element2.append(...this.get());
+  appendTo(element) {
+    element.append(...this.get());
   }
   get() {
-    if (this.data.nodes.length === 0) {
-      const parsed = parse2(this.data);
-      const templated = createTemplate(parsed);
-      this.data.nodes.splice(0, this.data.nodes.length, ...getNodes(templated));
-      mapNodes(this.data, this.data.nodes);
+    if (this.data.items.length === 0) {
+      const parsed = parse(this.data);
+      const templated = html(parsed, {
+        sanitiseBooleanAttributes: false
+      });
+      this.data.items.splice(0, this.data.items.length, ...templated.map((node2) => ({
+        nodes: [node2]
+      })));
+      mapNodes(this.data, this.data.items.flatMap((item) => item.fragment?.get() ?? item.nodes));
     }
-    return [...this.data.nodes];
+    return [
+      ...this.data.items.flatMap((item) => item.fragment?.get() ?? item.nodes)
+    ];
   }
   remove() {
-    const { length } = this.data.nodes;
+    const { length } = this.data.items;
     for (let index = 0;index < length; index += 1) {
-      const node2 = this.data.nodes[index];
-      node2.parentNode?.removeChild(node2);
+      const item = this.data.items[index];
+      item.fragment?.remove();
+      for (const node2 of item.nodes) {
+        node2.remove();
+      }
     }
-    this.data.nodes.splice(0, length);
+    this.data.items.splice(0, length);
   }
 }
 
 // src/html.ts
-function handleExpression(data2, prefix, expression) {
+function handleExpression(data, prefix, expression) {
   if (isNullableOrWhitespace(expression)) {
     return prefix;
   }
@@ -489,27 +556,27 @@ function handleExpression(data2, prefix, expression) {
     const { length } = expression;
     let expressions = "";
     for (let index = 0;index < length; index += 1) {
-      expressions += handleExpression(data2, "", expression[index]);
+      expressions += handleExpression(data, "", expression[index]);
     }
     return `${prefix}${expressions}`;
   }
   if (typeof expression === "function" || typeof expression === "object") {
-    const index = data2.values.push(expression) - 1;
+    const index = data.values.push(expression) - 1;
     return `${prefix}<!--abydon.${index}-->`;
   }
   return `${prefix}${expression}`;
 }
-function html2(strings, ...values) {
+function html4(strings, ...values) {
   return new Fragment(strings, values);
 }
-function parse2(data2) {
-  const { length } = data2.strings;
-  let template2 = "";
+function parse(data) {
+  const { length } = data.strings;
+  let template4 = "";
   for (let index = 0;index < length; index += 1) {
-    template2 += handleExpression(data2, data2.strings[index], data2.expressions[index]);
+    template4 += handleExpression(data, data.strings[index], data.expressions[index]);
   }
-  return template2;
+  return template4;
 }
 export {
-  html2 as html
+  html4 as html
 };

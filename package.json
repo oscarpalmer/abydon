@@ -4,13 +4,14 @@
 		"url": "https://oscarpalmer.se"
 	},
 	"dependencies": {
-		"@oscarpalmer/atoms": "^0.67.0",
-		"@oscarpalmer/sentinel": "^0.23.0"
+		"@oscarpalmer/atoms": "^0.71.0",
+		"@oscarpalmer/sentinel": "^0.23.0",
+		"@oscarpalmer/toretto": "0.12.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.8.3",
 		"@types/bun": "^1.1.6",
-		"bun": "^1.1.21",
+		"bun": "^1.1.24",
 		"dts-bundle-generator": "^9.5.1",
 		"typescript": "^5.5.4"
 	},
@@ -46,5 +47,5 @@
 	},
 	"type": "module",
 	"types": "types/index.d.ts",
-	"version": "0.8.0"
+	"version": "0.9.0"
 }

@@ -1,26 +1,17 @@
-import {closest} from '@oscarpalmer/atoms/element';
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {getString} from '@oscarpalmer/atoms/string';
 import {effect, isReactive} from '@oscarpalmer/sentinel';
-import type {FragmentElement} from '../../models';
-
-const booleanAttributes = new Set([
-	'checked',
-	'disabled',
-	'hidden',
-	'inert',
-	'multiple',
-	'open',
-	'readOnly',
-	'required',
-	'selected',
-]);
+import {
+	isBooleanAttribute,
+	setAttribute as setAttr,
+} from '@oscarpalmer/toretto/attribute';
+import type {ProperElement} from '../../models';
 
 const classPattern = /^class\./;
 const stylePattern = /^style\./;
 
 export function setAttribute(
-	element: FragmentElement,
+	element: ProperElement,
 	name: string,
 	value: unknown,
 ): void {
@@ -42,7 +33,7 @@ export function setAttribute(
 }
 
 function setClasses(
-	element: FragmentElement,
+	element: ProperElement,
 	name: string,
 	value: unknown,
 ): void {
@@ -65,11 +56,7 @@ function setClasses(
 	}
 }
 
-function setStyle(
-	element: FragmentElement,
-	name: string,
-	value: unknown,
-): void {
+function setStyle(element: ProperElement, name: string, value: unknown): void {
 	function update(value: unknown): void {
 		if (value == null || value === false || (value === true && unit == null)) {
 			element.style.removeProperty(property);
@@ -96,17 +83,13 @@ function setStyle(
 	}
 }
 
-function setValue(
-	element: FragmentElement,
-	name: string,
-	value: unknown,
-): void {
+function setValue(element: ProperElement, name: string, value: unknown): void {
 	const callback =
-		booleanAttributes.has(name) && name in element
+		isBooleanAttribute(name) && name in element
 			? name === 'selected'
-				? updateSelected(element)
+				? updateSelected
 				: updateProperty
-			: updateAttribute;
+			: setAttr;
 
 	if (isReactive(value)) {
 		effect(() => {
@@ -123,20 +106,8 @@ function triggerSelectChange(select: HTMLSelectElement): void {
 	}
 }
 
-function updateAttribute(
-	element: FragmentElement,
-	name: string,
-	value: unknown,
-): void {
-	if (value == null) {
-		element.removeAttribute(name);
-	} else {
-		element.setAttribute(name, getString(value));
-	}
-}
-
 function updateProperty(
-	element: FragmentElement,
+	element: ProperElement,
 	name: string,
 	value: unknown,
 ): void {
@@ -145,15 +116,17 @@ function updateProperty(
 	);
 }
 
-function updateSelected(element: FragmentElement) {
-	const select = closest(element, 'select')[0] as HTMLSelectElement;
+function updateSelected(
+	element: ProperElement,
+	name: string,
+	value: unknown,
+): void {
+	const select = element.closest('select') as HTMLSelectElement;
 	const options = [...(select?.options ?? [])];
 
-	return (element: FragmentElement, name: string, value: unknown): void => {
-		if (select != null && options.includes(element as HTMLOptionElement)) {
-			triggerSelectChange(select);
-		}
+	if (select != null && options.includes(element as HTMLOptionElement)) {
+		triggerSelectChange(select);
+	}
 
-		updateProperty(element, name, value);
-	};
+	updateProperty(element, name, value);
 }
