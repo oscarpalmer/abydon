@@ -1,4 +1,5 @@
-import {isReactive} from '@oscarpalmer/sentinel';
+import type {GenericCallback} from '@oscarpalmer/atoms/models';
+import {computed, isReactive} from '@oscarpalmer/sentinel';
 import {isFragment, isProperElement} from '../helpers';
 import {createNodes} from '../helpers/dom';
 import type {FragmentData, ProperNode} from '../models';
@@ -41,8 +42,8 @@ export function mapNodes(data: FragmentData, nodes: ProperNode[]): void {
 function mapValue(data: FragmentData, comment: Comment, value: unknown): void {
 	switch (true) {
 		case typeof value === 'function':
-			mapValue(data, comment, value());
-			return;
+			setReactiveNode(data, comment, computed(value as GenericCallback));
+			break;
 
 		case isReactive(value):
 			setReactiveNode(data, comment, value);

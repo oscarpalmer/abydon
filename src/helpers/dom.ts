@@ -1,6 +1,7 @@
 import {getString} from '@oscarpalmer/atoms/string';
 import type {ProperNode} from '../models';
-import {isFragment, isProperNode} from './index';
+import {isFragment, isProperElement, isProperNode} from './index';
+import {removeEvents} from '../node/event';
 
 export function createNodes(value: unknown): ProperNode[] {
 	if (isFragment(value)) {
@@ -14,16 +15,40 @@ export function createNodes(value: unknown): ProperNode[] {
 	return [new Text(getString(value))];
 }
 
+export function removeNodes(nodes: ProperNode[]): void {
+	sanitiseNodes(nodes);
+
+	const {length} = nodes;
+
+	for (let index = 0; index < length; index += 1) {
+		nodes[index].remove();
+	}
+}
+
 export function replaceNodes(from: ProperNode[], to: ProperNode[]): void {
 	const {length} = from;
 
 	for (let index = 0; index < length; index += 1) {
-		const node = from[index];
-
 		if (index === 0) {
-			node.replaceWith(...to);
+			from[index].replaceWith(...to);
 		} else {
-			node.remove();
+			from[index].remove();
+		}
+	}
+}
+
+function sanitiseNodes(nodes: ProperNode[]): void {
+	const {length} = nodes;
+
+	for (let index = 0; index < length; index += 1) {
+		const node = nodes[index];
+
+		if (isProperElement(node)) {
+			removeEvents(node);
+		}
+
+		if (node.hasChildNodes()) {
+			sanitiseNodes([...node.childNodes] as ProperNode[]);
 		}
 	}
 }

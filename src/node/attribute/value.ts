@@ -7,8 +7,9 @@ import {
 } from '@oscarpalmer/toretto/attribute';
 import type {ProperElement} from '../../models';
 
-const classPattern = /^class\./;
-const stylePattern = /^style\./;
+const classExpression = /^class\./;
+const styleFullExpression = /^style\.([\w-]+)(?:\.([\w-]+))?$/;
+const stylePrefixExpression = /^style\./;
 
 export function setAttribute(
 	element: ProperElement,
@@ -18,11 +19,11 @@ export function setAttribute(
 	element.removeAttribute(name);
 
 	switch (true) {
-		case classPattern.test(name):
+		case classExpression.test(name):
 			setClasses(element, name, value);
 			return;
 
-		case stylePattern.test(name):
+		case stylePrefixExpression.test(name):
 			setStyle(element, name, value);
 			return;
 
@@ -38,7 +39,7 @@ function setClasses(
 	value: unknown,
 ): void {
 	function update(value: unknown): void {
-		if (/^(|true)$/.test(getString(value))) {
+		if (value === true) {
 			element.classList.add(...classes);
 		} else {
 			element.classList.remove(...classes);
@@ -68,18 +69,16 @@ function setStyle(element: ProperElement, name: string, value: unknown): void {
 		}
 	}
 
-	const [, property, unit] = /^\w+\.([a-z-]+)(?:\.(\w+))?$/i.exec(name) ?? [];
+	const [, property, unit] = styleFullExpression.exec(name) ?? [];
 
-	if (property == null) {
-		return;
-	}
-
-	if (isReactive(value)) {
-		effect(() => {
-			update(value.get());
-		});
-	} else {
-		update(value);
+	if (property != null) {
+		if (isReactive(value)) {
+			effect(() => {
+				update(value.get());
+			});
+		} else {
+			update(value);
+		}
 	}
 }
 
@@ -111,9 +110,7 @@ function updateProperty(
 	name: string,
 	value: unknown,
 ): void {
-	(element as unknown as PlainObject)[name] = /^(|true)$/.test(
-		getString(value),
-	);
+	(element as unknown as PlainObject)[name] = value === true;
 }
 
 function updateSelected(

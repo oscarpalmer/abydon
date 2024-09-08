@@ -1,3 +1,4 @@
+import type { ProperNode } from './models';
 export declare class Fragment {
     private readonly $fragment;
     private readonly data;
@@ -9,7 +10,7 @@ export declare class Fragment {
     /**
      * Gets a list of the fragment's nodes
      */
-    get(): Node[];
+    get(): ProperNode[];
     /**
      * Removes the fragment from the DOM
      */

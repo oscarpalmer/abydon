@@ -1,4 +1,5 @@
-import {isReactive} from '@oscarpalmer/sentinel';
+import type {GenericCallback} from '@oscarpalmer/atoms/models';
+import {computed, isReactive} from '@oscarpalmer/sentinel';
 import type {FragmentData, ProperElement} from '../../models';
 import {mapEvent} from '../event';
 import {setAttribute} from './value';
@@ -11,28 +12,35 @@ function getValue(data: FragmentData, original: string): unknown {
 	return matches == null ? original : data.values[+matches[1]];
 }
 
-export function mapAttributes(data: FragmentData, element: ProperElement): void {
-		const attributes = [...element.attributes];
-		const {length} = attributes;
+export function mapAttributes(
+	data: FragmentData,
+	element: ProperElement,
+): void {
+	const attributes = [...element.attributes];
+	const {length} = attributes;
 
-		for (let index = 0; index < length; index += 1) {
-			const {name, value} = attributes[index];
+	for (let index = 0; index < length; index += 1) {
+		const {name, value} = attributes[index];
 
-			const actual = getValue(data, value);
+		const actual = getValue(data, value);
 
-			if (name.startsWith('@')) {
-				mapEvent(element, name, actual);
-			} else if (name.includes('.') || isReactive(actual)) {
-				mapValue(element, name, actual);
-			}
+		if (name.startsWith('@')) {
+			mapEvent(element, name, actual);
+		} else if (
+			name.includes('.') ||
+			typeof value === 'function' ||
+			isReactive(actual)
+		) {
+			mapValue(element, name, actual);
 		}
 	}
+}
 
 function mapValue(element: ProperElement, name: string, value: unknown): void {
 	switch (true) {
 		case typeof value === 'function':
-			mapValue(element, name, value());
-			return;
+			setAttribute(element, name, computed(value as GenericCallback));
+			break;
 
 		default:
 			setAttribute(element, name, value);

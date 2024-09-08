@@ -2,6 +2,7 @@ import {html} from '@oscarpalmer/toretto/html';
 import {parse} from './html';
 import type {FragmentData, ProperNode} from './models';
 import {mapNodes} from './node';
+import {removeNodes} from './helpers/dom';
 
 export class Fragment {
 	private readonly $fragment = true;
@@ -26,7 +27,7 @@ export class Fragment {
 	/**
 	 * Gets a list of the fragment's nodes
 	 */
-	get(): Node[] {
+	get(): ProperNode[] {
 		if (this.data.items.length === 0) {
 			const parsed = parse(this.data);
 
@@ -44,16 +45,12 @@ export class Fragment {
 
 			mapNodes(
 				this.data,
-				this.data.items.flatMap(
-					item => item.fragment?.get() ?? item.nodes,
-				) as ProperNode[],
+				this.data.items.flatMap(item => item.fragment?.get() ?? item.nodes),
 			);
 		}
 
 		return [
-			...(this.data.items.flatMap(
-				item => item.fragment?.get() ?? item.nodes,
-			) as ProperNode[]),
+			...this.data.items.flatMap(item => item.fragment?.get() ?? item.nodes),
 		];
 	}
 
@@ -64,13 +61,11 @@ export class Fragment {
 		const {length} = this.data.items;
 
 		for (let index = 0; index < length; index += 1) {
-			const item = this.data.items[index];
+			const {fragment, nodes} = this.data.items[index];
 
-			item.fragment?.remove();
+			fragment?.remove();
 
-			for (const node of item.nodes) {
-				node.remove();
-			}
+			removeNodes(nodes);
 		}
 
 		this.data.items.splice(0, length);

@@ -163,6 +163,19 @@ function html(value3, sanitisation) {
 var templates = {};
 
 // node_modules/@oscarpalmer/sentinel/node_modules/@oscarpalmer/atoms/dist/js/queue.mjs
+function queue(callback) {
+  _atomic_queued.add(callback);
+  if (_atomic_queued.size > 0) {
+    queueMicrotask(() => {
+      const callbacks = [..._atomic_queued];
+      const { length } = callbacks;
+      _atomic_queued.clear();
+      for (let index = 0;index < length; index += 1) {
+        callbacks[index]();
+      }
+    });
+  }
+}
 if (globalThis._atomic_queued == null) {
   const queued = new Set;
   Object.defineProperty(globalThis, "_atomic_queued", {
@@ -186,6 +199,22 @@ if (globalThis._sentinels == null) {
 function effect(callback) {
   return new Effect(callback);
 }
+function watch(reactive, key) {
+  const effect2 = globalThis._sentinels[globalThis._sentinels.length - 1];
+  if (effect2 != null) {
+    if (key == null) {
+      reactive.callbacks.any.add(effect2);
+    } else {
+      if (!reactive.callbacks.keys.has(key)) {
+        reactive.callbacks.keys.add(key);
+        reactive.callbacks.values.set(key, new Set);
+      }
+      reactive.callbacks.values.get(key)?.add(effect2);
+    }
+    effect2.reactives.add(reactive);
+  }
+}
+
 class Effect {
   $sentinel = "effect";
   state;
@@ -230,7 +259,97 @@ function isSentinel(value3, expression) {
   return expression.test(value3?.$sentinel ?? "");
 }
 
+// node_modules/@oscarpalmer/sentinel/node_modules/@oscarpalmer/atoms/dist/js/function.mjs
+function noop() {
+}
+
+// node_modules/@oscarpalmer/sentinel/dist/helpers/subscription.mjs
+function subscribe(state, subscriber, key) {
+  let set5;
+  if (key != null) {
+    if (state.callbacks.keys.has(key)) {
+      set5 = state.callbacks.values.get(key);
+    } else {
+      set5 = new Set;
+      state.callbacks.keys.add(key);
+      state.callbacks.values.set(key, set5);
+    }
+  } else {
+    set5 = state.callbacks.any;
+  }
+  if (set5 == null || set5.has(subscriber)) {
+    return noop;
+  }
+  set5.add(subscriber);
+  subscriber(state.value);
+  return () => {
+    unsubscribe(state, subscriber, key);
+  };
+}
+function unsubscribe(state, subscriber, key) {
+  if (key != null) {
+    const set5 = state.callbacks.values.get(key);
+    if (set5 != null) {
+      if (subscriber == null) {
+        set5.clear();
+      } else {
+        set5.delete(subscriber);
+      }
+      if (set5.size === 0) {
+        state.callbacks.keys.delete(key);
+        state.callbacks.values.delete(key);
+      }
+    }
+  } else if (subscriber != null) {
+    state.callbacks.any.delete(subscriber);
+  }
+}
+
+// node_modules/@oscarpalmer/sentinel/dist/helpers/event.mjs
+function disable(state) {
+  if (state.active) {
+    state.active = false;
+    const effects = [...state.callbacks.any, ...state.callbacks.values.values()].flatMap((value3) => value3 instanceof Set ? [...value3.values()] : value3).filter((value3) => typeof value3 !== "function");
+    for (const fx of effects) {
+      if (typeof fx !== "function") {
+        fx.reactives.delete(state);
+      }
+    }
+  }
+}
+function emit(state, keys) {
+  if (state.active) {
+    const subscribers = [
+      ...state.callbacks.any,
+      ...[...state.callbacks.values.entries()].filter(([key]) => keys == null || keys.includes(key)).map(([, value3]) => value3)
+    ].flatMap((value3) => value3 instanceof Set ? [...value3.values()] : value3).map((value3) => typeof value3 === "function" ? value3 : value3.callback);
+    for (const subsriber of subscribers) {
+      if (typeof subsriber === "function") {
+        queue(() => {
+          subsriber(state.value);
+        });
+      }
+    }
+  }
+}
+function enable(state) {
+  if (!state.active) {
+    state.active = true;
+    emit(state);
+  }
+}
+
 // node_modules/@oscarpalmer/sentinel/dist/helpers/value.mjs
+function getValue3(reactive, key) {
+  watch(reactive, typeof key === "symbol" ? undefined : key);
+  return key == null ? reactive.value : Array.isArray(reactive.value) ? reactive.value.at(key) : reactive.value[key];
+}
+function setValue3(reactive, value3) {
+  if (!Object.is(reactive.value, value3)) {
+    reactive.value = value3;
+    emit(reactive);
+  }
+}
 var arrayOperations = new Set([
   "copyWithin",
   "fill",
@@ -242,6 +361,74 @@ var arrayOperations = new Set([
   "splice",
   "unshift"
 ]);
+
+// node_modules/@oscarpalmer/sentinel/dist/reactive/instance.mjs
+class ReactiveInstance {
+  state;
+  constructor(type, value22) {
+    this.$sentinel = type;
+    this.state = {
+      value: value22,
+      active: true,
+      callbacks: {
+        any: new Set,
+        keys: new Set,
+        values: new Map
+      }
+    };
+  }
+  get() {
+    return getValue3(this.state);
+  }
+  peek() {
+    return this.state.value;
+  }
+  run() {
+    enable(this.state);
+  }
+  stop() {
+    disable(this.state);
+  }
+  toJSON() {
+    return getValue3(this.state);
+  }
+  toString() {
+    return String(getValue3(this.state));
+  }
+}
+
+// node_modules/@oscarpalmer/sentinel/dist/reactive/value.mjs
+class ReactiveValue extends ReactiveInstance {
+  subscribe(subscriber) {
+    return subscribe(this.state, subscriber);
+  }
+  unsubscribe(subscriber) {
+    if (subscriber == null) {
+      this.state.callbacks.any.clear();
+    } else {
+      this.state.callbacks.any.delete(subscriber);
+    }
+  }
+}
+
+// node_modules/@oscarpalmer/sentinel/dist/reactive/computed.mjs
+function computed(value32) {
+  return new Computed(value32);
+}
+
+class Computed extends ReactiveValue {
+  fx;
+  constructor(value32) {
+    super("computed", undefined);
+    this.fx = effect(() => setValue3(this.state, value32()));
+  }
+  run() {
+    this.fx.start();
+  }
+  stop() {
+    this.fx.stop();
+  }
+}
 // node_modules/@oscarpalmer/sentinel/dist/reactive/index.mjs
 var primitives = new Set(["boolean", "number", "string"]);
 
@@ -256,29 +443,15 @@ function isProperNode(value11) {
   return value11 instanceof CharacterData || value11 instanceof Element;
 }
 
-// src/helpers/dom.ts
-function createNodes(value11) {
-  if (isFragment(value11)) {
-    return value11.get();
-  }
-  if (isProperNode(value11)) {
-    return [value11];
-  }
-  return [new Text(getString(value11))];
-}
-function replaceNodes(from, to) {
-  const { length } = from;
-  for (let index = 0;index < length; index += 1) {
-    const node = from[index];
-    if (index === 0) {
-      node.replaceWith(...to);
-    } else {
-      node.remove();
-    }
-  }
-}
-
 // src/node/event.ts
+function getController(element) {
+  let controller = controllers.get(element);
+  if (controller == null) {
+    controller = new AbortController;
+    controllers.set(element, controller);
+  }
+  return controller;
+}
 function getOptions(options) {
   const parts = options.split(":");
   return {
@@ -289,9 +462,60 @@ function getOptions(options) {
 }
 function mapEvent(element, name, value11) {
   element.removeAttribute(name);
-  const [, type, options] = /^@(\w+)(?::([a-z:]+))?$/.exec(name) ?? [];
+  const [, type, options] = eventNamePattern.exec(name) ?? [];
   if (typeof value11 === "function" && type != null) {
-    element.addEventListener(type, value11, getOptions(options ?? ""));
+    element.addEventListener(type, value11, {
+      ...getOptions(options ?? ""),
+      signal: getController(element).signal
+    });
+  }
+}
+function removeEvents(element) {
+  if (controllers.has(element)) {
+    controllers.get(element)?.abort();
+    controllers.delete(element);
+  }
+}
+var controllers = new WeakMap;
+var eventNamePattern = /^@([\w-]+)(?::([a-z:]+))?$/i;
+
+// src/helpers/dom.ts
+function createNodes(value11) {
+  if (isFragment(value11)) {
+    return value11.get();
+  }
+  if (isProperNode(value11)) {
+    return [value11];
+  }
+  return [new Text(getString(value11))];
+}
+function removeNodes(nodes) {
+  sanitiseNodes2(nodes);
+  const { length } = nodes;
+  for (let index = 0;index < length; index += 1) {
+    nodes[index].remove();
+  }
+}
+function replaceNodes(from, to) {
+  const { length } = from;
+  for (let index = 0;index < length; index += 1) {
+    if (index === 0) {
+      from[index].replaceWith(...to);
+    } else {
+      from[index].remove();
+    }
+  }
+}
+function sanitiseNodes2(nodes) {
+  const { length } = nodes;
+  for (let index = 0;index < length; index += 1) {
+    const node = nodes[index];
+    if (isProperElement(node)) {
+      removeEvents(node);
+    }
+    if (node.hasChildNodes()) {
+      sanitiseNodes2([...node.childNodes]);
+    }
   }
 }
 
@@ -299,10 +523,10 @@ function mapEvent(element, name, value11) {
 function setAttribute2(element, name, value11) {
   element.removeAttribute(name);
   switch (true) {
-    case classPattern.test(name):
+    case classExpression.test(name):
       setClasses(element, name, value11);
       return;
-    case stylePattern.test(name):
+    case stylePrefixExpression.test(name):
       setStyle(element, name, value11);
       return;
     default:
@@ -312,7 +536,7 @@ function setAttribute2(element, name, value11) {
 }
 function setClasses(element, name, value11) {
   function update(value12) {
-    if (/^(|true)$/.test(getString(value12))) {
+    if (value12 === true) {
       element.classList.add(...classes);
     } else {
       element.classList.remove(...classes);
@@ -335,16 +559,15 @@ function setStyle(element, name, value11) {
       element.style.setProperty(property, value12 === true ? unit : getString(value12));
     }
   }
-  const [, property, unit] = /^\w+\.([a-z-]+)(?:\.(\w+))?$/i.exec(name) ?? [];
-  if (property == null) {
-    return;
-  }
-  if (isReactive(value11)) {
-    effect(() => {
-      update(value11.get());
-    });
-  } else {
-    update(value11);
+  const [, property, unit] = styleFullExpression.exec(name) ?? [];
+  if (property != null) {
+    if (isReactive(value11)) {
+      effect(() => {
+        update(value11.get());
+      });
+    } else {
+      update(value11);
+    }
   }
 }
 function setValue5(element, name, value11) {
@@ -363,7 +586,7 @@ function triggerSelectChange(select) {
   }
 }
 function updateProperty(element, name, value11) {
-  element[name] = /^(|true)$/.test(getString(value11));
+  element[name] = value11 === true;
 }
 function updateSelected(element, name, value11) {
   const select = element.closest("select");
@@ -373,8 +596,9 @@ function updateSelected(element, name, value11) {
   }
   updateProperty(element, name, value11);
 }
-var classPattern = /^class\./;
-var stylePattern = /^style\./;
+var classExpression = /^class\./;
+var styleFullExpression = /^style\.([\w-]+)(?:\.([\w-]+))?$/;
+var stylePrefixExpression = /^style\./;
 
 // src/node/attribute/index.ts
 function getValue5(data, original) {
@@ -389,7 +613,7 @@ function mapAttributes(data, element) {
     const actual = getValue5(data, value12);
     if (name.startsWith("@")) {
       mapEvent(element, name, actual);
-    } else if (name.includes(".") || isReactive(actual)) {
+    } else if (name.includes(".") || typeof value12 === "function" || isReactive(actual)) {
       mapValue(element, name, actual);
     }
   }
@@ -397,8 +621,8 @@ function mapAttributes(data, element) {
 function mapValue(element, name, value12) {
   switch (true) {
     case typeof value12 === "function":
-      mapValue(element, name, value12());
-      return;
+      setAttribute2(element, name, computed(value12));
+      break;
     default:
       setAttribute2(element, name, value12);
       break;
@@ -483,8 +707,8 @@ function mapNodes(data, nodes) {
 function mapValue2(data, comment, value13) {
   switch (true) {
     case typeof value13 === "function":
-      mapValue2(data, comment, value13());
-      return;
+      setReactiveNode(data, comment, computed(value13));
+      break;
     case isReactive(value13):
       setReactiveNode(data, comment, value13);
       break;
@@ -537,11 +761,9 @@ class Fragment {
   remove() {
     const { length } = this.data.items;
     for (let index = 0;index < length; index += 1) {
-      const item = this.data.items[index];
-      item.fragment?.remove();
-      for (const node2 of item.nodes) {
-        node2.remove();
-      }
+      const { fragment, nodes } = this.data.items[index];
+      fragment?.remove();
+      removeNodes(nodes);
     }
     this.data.items.splice(0, length);
   }
