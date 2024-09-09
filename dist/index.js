@@ -793,7 +793,7 @@ function replaceComment(data, comment, value13) {
   const item = data.items.find((item2) => item2.nodes.includes(comment));
   const nodes = createNodes(value13);
   if (item != null) {
-    item.fragment = isFragment(value13) ? value13 : undefined;
+    item.fragments = isFragment(value13) ? [value13] : undefined;
     item.nodes = nodes;
   }
   comment.replaceWith(...nodes);

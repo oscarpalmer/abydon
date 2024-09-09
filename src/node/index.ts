@@ -64,7 +64,7 @@ function replaceComment(
 	const nodes = createNodes(value);
 
 	if (item != null) {
-		item.fragment = isFragment(value) ? value : undefined;
+		item.fragments = isFragment(value) ? [value] : undefined;
 		item.nodes = nodes;
 	}
 
