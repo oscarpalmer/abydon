@@ -433,7 +433,7 @@ class Computed extends ReactiveValue {
 var primitives = new Set(["boolean", "number", "string"]);
 
 // src/helpers/index.ts
-function compareOrder(first, second) {
+function compareArrays(first, second) {
   const firstIsLarger = first.length > second.length;
   const from = firstIsLarger ? first : second;
   const to = firstIsLarger ? second : first;
@@ -506,13 +506,10 @@ function removeNodes(nodes) {
   }
 }
 function replaceNodes(from, to) {
+  from[0]?.replaceWith(...to);
   const { length } = from;
-  for (let index = 0;index < length; index += 1) {
-    if (index === 0) {
-      from[index].replaceWith(...to);
-    } else {
-      from[index].remove();
-    }
+  for (let index = 1;index < length; index += 1) {
+    from[index].remove();
   }
 }
 function sanitiseNodes2(nodes) {
@@ -640,40 +637,40 @@ function mapValue(element, name, value12) {
 var commentExpression = /^<!--abydon\.(\d+)-->$/;
 
 // src/node/value.ts
+function removeFragments(fragments) {
+  if (fragments != null) {
+    const { length } = fragments;
+    for (let index = 0;index < length; index += 1) {
+      fragments[index].remove();
+    }
+  }
+}
 function setArray(fragments, nodes, comment, text, value12) {
   if (value12.length === 0) {
-    if (nodes != null) {
-      replaceNodes(nodes, [comment]);
-    }
-    return;
+    return {
+      nodes: setText(fragments, nodes, comment, text, value12)
+    };
   }
   let templates2 = value12.filter((item) => isFragment(item) && item.identifier != null);
   const identifiers = templates2.map((fragment) => fragment.identifier);
+  const oldIdentifiers = fragments?.map((fragment) => fragment.identifier) ?? [];
   if (new Set(identifiers).size !== templates2.length) {
     templates2 = [];
   }
-  if (templates2.length === 0) {
-    const next = value12.flatMap((item) => createNodes(value12));
-    setNodes(nodes, comment, text, next);
+  const noTemplates = templates2.length === 0;
+  if (noTemplates || nodes == null || oldIdentifiers.some((identifier) => identifier == null)) {
     return {
-      nodes: next
+      fragments: noTemplates ? undefined : templates2,
+      nodes: setNodes(fragments, nodes, comment, text, noTemplates ? value12.flatMap((item) => createNodes(item)) : templates2.flatMap((template4) => template4.get()))
     };
   }
-  const oldIdentifiers = fragments?.map((fragment) => fragment.identifier) ?? [];
-  if (nodes == null || oldIdentifiers.some((identifier) => identifier == null)) {
-    const next = templates2.flatMap((template4) => template4.get());
-    setNodes(nodes, comment, text, next);
-    return {
-      fragments: templates2,
-      nodes: next
-    };
-  }
-  const comparison = compareOrder(fragments ?? [], templates2);
-  let position = nodes[0];
+  const next = templates2.map((template4) => fragments?.find((fragment) => fragment.identifier === template4.identifier) ?? template4);
+  const comparison = compareArrays(fragments ?? [], templates2);
   if (comparison !== "removed") {
+    let position = nodes[0];
     const before = comparison === "added" && !oldIdentifiers.includes(templates2[0].identifier);
-    const items = templates2.flatMap((template4) => template4.get().map((node) => ({
-      identifier: template4.identifier,
+    const items = next.flatMap((fragment) => fragment.get().flatMap((node) => ({
+      identifier: fragment.identifier,
       value: node
     })));
     const { length: length2 } = items;
@@ -695,16 +692,11 @@ function setArray(fragments, nodes, comment, text, value12) {
     toRemove[index].remove();
   }
   return {
-    fragments: templates2,
-    nodes: templates2.flatMap((template4) => template4.get())
+    fragments: next,
+    nodes: next.flatMap((fragment) => fragment.get())
   };
 }
-function setNode(nodes, comment, text, value12) {
-  const next = createNodes(value12);
-  setNodes(nodes, comment, text, next);
-  return next;
-}
-function setNodes(nodes, comment, text, next) {
+function setNodes(fragments, nodes, comment, text, next) {
   if (nodes == null) {
     if (comment.parentNode != null) {
       replaceNodes([comment], next);
@@ -714,6 +706,8 @@ function setNodes(nodes, comment, text, next) {
   } else {
     replaceNodes(nodes, next);
   }
+  removeFragments(fragments);
+  return next;
 }
 function setReactiveNode(data, comment, reactive3) {
   const item = data.items.find((item2) => item2.nodes.includes(comment));
@@ -723,16 +717,16 @@ function setReactiveNode(data, comment, reactive3) {
   effect(() => {
     const value12 = reactive3.get();
     if (Array.isArray(value12)) {
-      const array7 = setArray(fragments, nodes, comment, text, value12);
-      fragments = array7?.fragments;
-      nodes = array7?.nodes;
+      const result = setArray(fragments, nodes, comment, text, value12);
+      fragments = typeof result === "boolean" ? undefined : result?.fragments;
+      nodes = typeof result === "boolean" ? result ? [text] : undefined : result?.nodes;
     } else {
       const valueIsFragment = isFragment(value12);
       fragments = valueIsFragment ? [value12] : undefined;
       if (valueIsFragment || isProperNode(value12)) {
-        nodes = setNode(nodes, comment, text, value12);
+        nodes = setNodes(fragments, nodes, comment, text, createNodes(value12));
       } else {
-        nodes = setText(nodes, comment, text, value12) ? [text] : undefined;
+        nodes = setText(fragments, nodes, comment, text, value12);
       }
     }
     if (item != null) {
@@ -741,22 +735,21 @@ function setReactiveNode(data, comment, reactive3) {
     }
   });
 }
-function setText(nodes, comment, text, value12) {
+function setText(fragments, nodes, comment, text, value12) {
   const isNullable = isNullableOrWhitespace(value12);
   text.textContent = isNullable ? "" : getString(value12);
+  let result = false;
   if (nodes != null) {
     replaceNodes(nodes, [isNullable ? comment : text]);
-    return !isNullable;
-  }
-  if (isNullable && comment.parentNode == null) {
+    result = !isNullable;
+  } else if (isNullable && comment.parentNode == null) {
     text.replaceWith(comment);
-    return false;
-  }
-  if (!isNullable && text.parentNode == null) {
+  } else if (!isNullable && text.parentNode == null) {
     comment.replaceWith(text);
-    return true;
+    result = true;
   }
-  return false;
+  removeFragments(fragments);
+  return result ? [text] : undefined;
 }
 
 // src/node/index.ts

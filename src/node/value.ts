@@ -3,9 +3,19 @@ import type {Key} from '@oscarpalmer/atoms/models';
 import {getString} from '@oscarpalmer/atoms/string';
 import {type Reactive, effect} from '@oscarpalmer/sentinel';
 import type {Fragment} from '../fragment';
-import {compareOrder, isFragment, isProperNode} from '../helpers';
+import {compareArrays, isFragment, isProperNode} from '../helpers';
 import {createNodes, replaceNodes} from '../helpers/dom';
 import type {FragmentData, FragmentItem, ProperNode} from '../models';
+
+function removeFragments(fragments: Fragment[] | undefined): void {
+	if (fragments != null) {
+		const {length} = fragments;
+
+		for (let index = 0; index < length; index += 1) {
+			fragments[index].remove();
+		}
+	}
+}
 
 function setArray(
 	fragments: Fragment[] | undefined,
@@ -13,13 +23,11 @@ function setArray(
 	comment: Comment,
 	text: Text,
 	value: unknown[],
-): FragmentItem | undefined {
+): Partial<FragmentItem> | boolean {
 	if (value.length === 0) {
-		if (nodes != null) {
-			replaceNodes(nodes, [comment]);
-		}
-
-		return undefined;
+		return {
+			nodes: setText(fragments, nodes, comment, text, value),
+		};
 	}
 
 	let templates = value.filter(
@@ -27,46 +35,52 @@ function setArray(
 	) as Fragment[];
 
 	const identifiers = templates.map(fragment => fragment.identifier) as Key[];
+	const oldIdentifiers = fragments?.map(fragment => fragment.identifier) ?? [];
 
 	if (new Set(identifiers).size !== templates.length) {
 		templates = [];
 	}
 
-	if (templates.length === 0) {
-		const next = value.flatMap(item => createNodes(value));
+	const noTemplates = templates.length === 0;
 
-		setNodes(nodes, comment, text, next);
-
+	if (
+		noTemplates ||
+		nodes == null ||
+		oldIdentifiers.some(identifier => identifier == null)
+	) {
 		return {
-			nodes: next,
+			fragments: noTemplates ? undefined : templates,
+			nodes: setNodes(
+				fragments,
+				nodes,
+				comment,
+				text,
+				noTemplates
+					? value.flatMap(item => createNodes(item))
+					: templates.flatMap(template => template.get()),
+			),
 		};
 	}
 
-	const oldIdentifiers = fragments?.map(fragment => fragment.identifier) ?? [];
+	const next = templates.map(
+		template =>
+			fragments?.find(
+				fragment => fragment.identifier === template.identifier,
+			) ?? template,
+	);
 
-	if (nodes == null || oldIdentifiers.some(identifier => identifier == null)) {
-		const next = templates.flatMap(template => template.get());
-
-		setNodes(nodes, comment, text, next);
-
-		return {
-			fragments: templates,
-			nodes: next,
-		};
-	}
-
-	const comparison = compareOrder(fragments ?? [], templates);
-
-	let position = nodes[0];
+	const comparison = compareArrays(fragments ?? [], templates);
 
 	if (comparison !== 'removed') {
+		let position = nodes[0];
+
 		const before =
 			comparison === 'added' &&
 			!oldIdentifiers.includes(templates[0].identifier);
 
-		const items = templates.flatMap(template =>
-			template.get().map(node => ({
-				identifier: template.identifier,
+		const items = next.flatMap(fragment =>
+			fragment.get().flatMap(node => ({
+				identifier: fragment.identifier,
 				value: node,
 			})),
 		);
@@ -103,30 +117,18 @@ function setArray(
 	}
 
 	return {
-		fragments: templates,
-		nodes: templates.flatMap(template => template.get()),
+		fragments: next,
+		nodes: next.flatMap(fragment => fragment.get()),
 	};
 }
 
-function setNode(
-	nodes: ProperNode[] | undefined,
-	comment: Comment,
-	text: Text,
-	value: Fragment | ProperNode,
-): ProperNode[] {
-	const next = createNodes(value);
-
-	setNodes(nodes, comment, text, next);
-
-	return next;
-}
-
 function setNodes(
+	fragments: Fragment[] | undefined,
 	nodes: ProperNode[] | undefined,
 	comment: Comment,
 	text: Text,
 	next: ProperNode[],
-): void {
+): ProperNode[] {
 	if (nodes == null) {
 		if (comment.parentNode != null) {
 			replaceNodes([comment], next);
@@ -136,6 +138,10 @@ function setNodes(
 	} else {
 		replaceNodes(nodes, next);
 	}
+
+	removeFragments(fragments);
+
+	return next;
 }
 
 export function setReactiveNode(
@@ -153,19 +159,25 @@ export function setReactiveNode(
 		const value = reactive.get();
 
 		if (Array.isArray(value)) {
-			const array = setArray(fragments, nodes, comment, text, value);
+			const result = setArray(fragments, nodes, comment, text, value);
 
-			fragments = array?.fragments;
-			nodes = array?.nodes;
+			fragments = typeof result === 'boolean' ? undefined : result?.fragments;
+
+			nodes =
+				typeof result === 'boolean'
+					? result
+						? [text]
+						: undefined
+					: result?.nodes;
 		} else {
 			const valueIsFragment = isFragment(value);
 
 			fragments = valueIsFragment ? [value] : undefined;
 
 			if (valueIsFragment || isProperNode(value)) {
-				nodes = setNode(nodes, comment, text, value);
+				nodes = setNodes(fragments, nodes, comment, text, createNodes(value));
 			} else {
-				nodes = setText(nodes, comment, text, value) ? [text] : undefined;
+				nodes = setText(fragments, nodes, comment, text, value);
 			}
 		}
 
@@ -177,32 +189,31 @@ export function setReactiveNode(
 }
 
 function setText(
+	fragments: Fragment[] | undefined,
 	nodes: ProperNode[] | undefined,
 	comment: Comment,
 	text: Text,
 	value: unknown,
-): boolean {
+): ProperNode[] | undefined {
 	const isNullable = isNullableOrWhitespace(value);
 
 	text.textContent = isNullable ? '' : getString(value);
 
+	let result = false;
+
 	if (nodes != null) {
 		replaceNodes(nodes, [isNullable ? comment : text]);
 
-		return !isNullable;
-	}
-
-	if (isNullable && comment.parentNode == null) {
+		result = !isNullable;
+	} else if (isNullable && comment.parentNode == null) {
 		text.replaceWith(comment);
-
-		return false;
-	}
-
-	if (!isNullable && text.parentNode == null) {
+	} else if (!isNullable && text.parentNode == null) {
 		comment.replaceWith(text);
 
-		return true;
+		result = true;
 	}
 
-	return false;
+	removeFragments(fragments);
+
+	return result ? [text] : undefined;
 }

@@ -26,14 +26,12 @@ export function removeNodes(nodes: ProperNode[]): void {
 }
 
 export function replaceNodes(from: ProperNode[], to: ProperNode[]): void {
+	from[0]?.replaceWith(...to);
+
 	const {length} = from;
 
-	for (let index = 0; index < length; index += 1) {
-		if (index === 0) {
-			from[index].replaceWith(...to);
-		} else {
-			from[index].remove();
-		}
+	for (let index = 1; index < length; index += 1) {
+		from[index].remove();
 	}
 }
 

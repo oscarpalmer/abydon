@@ -1,7 +1,7 @@
 import type {Fragment} from '../fragment';
 import type {ProperElement, ProperNode} from '../models';
 
-export function compareOrder(
+export function compareArrays(
 	first: unknown[],
 	second: unknown[],
 ): 'added' | 'dissimilar' | 'removed' {
