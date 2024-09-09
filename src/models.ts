@@ -1,19 +1,24 @@
 import type {Key} from '@oscarpalmer/atoms/models';
+import type {Effect, Reactive} from '@oscarpalmer/sentinel';
 import type {Fragment} from './fragment';
 
 export type FragmentData = {
 	expressions: unknown[];
 	identifier?: Key;
 	items: FragmentItem[];
+	sentinel: FragmentDataSentinel;
 	strings: TemplateStringsArray;
 	values: unknown[];
 };
 
-export type FragmentItem = {
-	fragments?: Fragment[];
-	nodes: ProperNode[];
+type FragmentDataSentinel = {
+	effects: Set<Effect>;
+	values: Set<Reactive>;
 };
 
-export type ProperElement = HTMLElement | SVGElement;
+export type FragmentItem = {
+	fragments?: Fragment[];
+	nodes: ChildNode[];
+};
 
-export type ProperNode = CharacterData | Element;
+export type HTMLOrSVGElement = HTMLElement | SVGElement;

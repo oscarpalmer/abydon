@@ -1,6 +1,6 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {computed, isReactive} from '@oscarpalmer/sentinel';
-import type {FragmentData, ProperElement} from '../../models';
+import type {FragmentData, HTMLOrSVGElement} from '../../models';
 import {mapEvent} from '../event';
 import {setAttribute} from './value';
 
@@ -14,7 +14,7 @@ function getValue(data: FragmentData, original: string): unknown {
 
 export function mapAttributes(
 	data: FragmentData,
-	element: ProperElement,
+	element: HTMLOrSVGElement,
 ): void {
 	const attributes = [...element.attributes];
 	const {length} = attributes;
@@ -31,19 +31,37 @@ export function mapAttributes(
 			typeof value === 'function' ||
 			isReactive(actual)
 		) {
-			mapValue(element, name, actual);
+			mapValue(data, element, name, actual);
 		}
 	}
 }
 
-function mapValue(element: ProperElement, name: string, value: unknown): void {
+function mapValue(
+	data: FragmentData,
+	element: HTMLOrSVGElement,
+	name: string,
+	value: unknown,
+): void {
 	switch (true) {
 		case typeof value === 'function':
-			setAttribute(element, name, computed(value as GenericCallback));
+			setComputedAttribute(data, element, name, value as GenericCallback);
 			break;
 
 		default:
-			setAttribute(element, name, value);
+			setAttribute(data, element, name, value);
 			break;
 	}
+}
+
+function setComputedAttribute(
+	data: FragmentData,
+	element: HTMLOrSVGElement,
+	name: string,
+	callback: GenericCallback,
+): void {
+	const value = computed(callback);
+
+	data.sentinel.values.add(value);
+
+	setAttribute(data, element, name, value);
 }

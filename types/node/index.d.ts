@@ -1,2 +1,2 @@
-import type { FragmentData, ProperNode } from '../models';
-export declare function mapNodes(data: FragmentData, nodes: ProperNode[]): void;
+import type { FragmentData } from '../models';
+export declare function mapNodes(data: FragmentData, nodes: ChildNode[]): void;

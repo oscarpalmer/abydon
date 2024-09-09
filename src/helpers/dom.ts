@@ -1,21 +1,20 @@
 import {getString} from '@oscarpalmer/atoms/string';
-import type {ProperNode} from '../models';
-import {isFragment, isProperElement, isProperNode} from './index';
+import {isChildNode, isFragment, isHTMLOrSVGElement} from './index';
 import {removeEvents} from '../node/event';
 
-export function createNodes(value: unknown): ProperNode[] {
+export function createNodes(value: unknown): ChildNode[] {
 	if (isFragment(value)) {
-		return value.get() as ProperNode[];
+		return value.get() as ChildNode[];
 	}
 
-	if (isProperNode(value)) {
+	if (isChildNode(value)) {
 		return [value];
 	}
 
 	return [new Text(getString(value))];
 }
 
-export function removeNodes(nodes: ProperNode[]): void {
+export function removeNodes(nodes: ChildNode[]): void {
 	sanitiseNodes(nodes);
 
 	const {length} = nodes;
@@ -25,7 +24,7 @@ export function removeNodes(nodes: ProperNode[]): void {
 	}
 }
 
-export function replaceNodes(from: ProperNode[], to: ProperNode[]): void {
+export function replaceNodes(from: ChildNode[], to: ChildNode[]): void {
 	from[0]?.replaceWith(...to);
 
 	const {length} = from;
@@ -35,18 +34,18 @@ export function replaceNodes(from: ProperNode[], to: ProperNode[]): void {
 	}
 }
 
-function sanitiseNodes(nodes: ProperNode[]): void {
+function sanitiseNodes(nodes: ChildNode[]): void {
 	const {length} = nodes;
 
 	for (let index = 0; index < length; index += 1) {
 		const node = nodes[index];
 
-		if (isProperElement(node)) {
+		if (isHTMLOrSVGElement(node)) {
 			removeEvents(node);
 		}
 
 		if (node.hasChildNodes()) {
-			sanitiseNodes([...node.childNodes] as ProperNode[]);
+			sanitiseNodes([...node.childNodes] as ChildNode[]);
 		}
 	}
 }

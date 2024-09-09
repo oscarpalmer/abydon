@@ -1,7 +1,7 @@
 import type {Key} from '@oscarpalmer/atoms/models';
 import {html} from '@oscarpalmer/toretto/html';
 import {parse} from './html';
-import type {FragmentData, ProperNode} from './models';
+import type {FragmentData} from './models';
 import {mapNodes} from './node';
 import {removeNodes} from './helpers/dom';
 
@@ -18,6 +18,10 @@ export class Fragment {
 			expressions,
 			strings,
 			items: [],
+			sentinel: {
+				effects: new Set(),
+				values: new Set(),
+			},
 			values: [],
 		};
 	}
@@ -32,7 +36,7 @@ export class Fragment {
 	/**
 	 * Gets a list of the fragment's nodes
 	 */
-	get(): ProperNode[] {
+	get(): ChildNode[] {
 		if (this.data.items.length === 0) {
 			const parsed = parse(this.data);
 
@@ -44,7 +48,7 @@ export class Fragment {
 				0,
 				this.data.items.length,
 				...templated.map(node => ({
-					nodes: [node as ProperNode],
+					nodes: [node as ChildNode],
 				})),
 			);
 
@@ -75,19 +79,37 @@ export class Fragment {
 	 * Removes the fragment from the DOM
 	 */
 	remove(): void {
-		const {length} = this.data.items;
+		removeFragment(this.data);
+	}
+}
+
+function removeFragment(data: FragmentData): void {
+	removeSentinels(data);
+
+	const {length} = data.items;
+
+	for (let index = 0; index < length; index += 1) {
+		const {fragments, nodes} = data.items[index];
+		const {length} = fragments ?? [];
 
 		for (let index = 0; index < length; index += 1) {
-			const {fragments, nodes} = this.data.items[index];
-			const {length} = fragments ?? [];
-
-			for (let index = 0; index < length; index += 1) {
-				fragments?.[index]?.remove();
-			}
-
-			removeNodes(nodes);
+			fragments?.[index]?.remove();
 		}
 
-		this.data.items.splice(0, length);
+		removeNodes(nodes);
 	}
+
+	data.items.splice(0, length);
+}
+
+function removeSentinels(data: FragmentData): void {
+	const sentinels = [...data.sentinel.effects, ...data.sentinel.values];
+	const {length} = sentinels;
+
+	for (let index = 0; index < length; index += 1) {
+		sentinels[index].stop();
+	}
+
+	data.sentinel.effects.clear();
+	data.sentinel.values.clear();
 }

@@ -1,10 +1,10 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {computed, isReactive} from '@oscarpalmer/sentinel';
-import {isFragment, isProperElement} from '../helpers';
+import {isFragment, isHTMLOrSVGElement} from '../helpers';
 import {createNodes} from '../helpers/dom';
-import type {FragmentData, ProperNode} from '../models';
+import type {FragmentData} from '../models';
 import {mapAttributes} from './attribute';
-import {setReactiveNode} from './value';
+import {setReactiveValue} from './value';
 
 const commentExpression = /^abydon\.(\d+)$/;
 
@@ -17,7 +17,7 @@ function mapNode(data: FragmentData, comment: Comment): void {
 	}
 }
 
-export function mapNodes(data: FragmentData, nodes: ProperNode[]): void {
+export function mapNodes(data: FragmentData, nodes: ChildNode[]): void {
 	const {length} = nodes;
 
 	for (let index = 0; index < length; index += 1) {
@@ -29,12 +29,12 @@ export function mapNodes(data: FragmentData, nodes: ProperNode[]): void {
 			continue;
 		}
 
-		if (isProperElement(node)) {
+		if (isHTMLOrSVGElement(node)) {
 			mapAttributes(data, node);
 		}
 
 		if (node.hasChildNodes()) {
-			mapNodes(data, [...node.childNodes] as ProperNode[]);
+			mapNodes(data, [...node.childNodes] as ChildNode[]);
 		}
 	}
 }
@@ -42,11 +42,11 @@ export function mapNodes(data: FragmentData, nodes: ProperNode[]): void {
 function mapValue(data: FragmentData, comment: Comment, value: unknown): void {
 	switch (true) {
 		case typeof value === 'function':
-			setReactiveNode(data, comment, computed(value as GenericCallback));
+			setComputedValue(data, comment, value as GenericCallback);
 			break;
 
 		case isReactive(value):
-			setReactiveNode(data, comment, value);
+			setReactiveValue(data, comment, value);
 			break;
 
 		default:
@@ -69,4 +69,16 @@ function replaceComment(
 	}
 
 	comment.replaceWith(...nodes);
+}
+
+function setComputedValue(
+	data: FragmentData,
+	comment: Comment,
+	callback: GenericCallback,
+): void {
+	const value = computed(callback);
+
+	data.sentinel.values.add(value);
+
+	setReactiveValue(data, comment, value);
 }

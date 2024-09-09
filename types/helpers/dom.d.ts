@@ -1,4 +1,3 @@
-import type { ProperNode } from '../models';
-export declare function createNodes(value: unknown): ProperNode[];
-export declare function removeNodes(nodes: ProperNode[]): void;
-export declare function replaceNodes(from: ProperNode[], to: ProperNode[]): void;
+export declare function createNodes(value: unknown): ChildNode[];
+export declare function removeNodes(nodes: ChildNode[]): void;
+export declare function replaceNodes(from: ChildNode[], to: ChildNode[]): void;

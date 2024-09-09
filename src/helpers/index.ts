@@ -1,5 +1,5 @@
 import type {Fragment} from '../fragment';
-import type {ProperElement, ProperNode} from '../models';
+import type {HTMLOrSVGElement} from '../models';
 
 export function compareArrays(
 	first: unknown[],
@@ -20,6 +20,10 @@ export function compareArrays(
 	return firstIsLarger ? 'removed' : 'added';
 }
 
+export function isChildNode(value: unknown): value is ChildNode {
+	return value instanceof CharacterData || value instanceof Element;
+}
+
 export function isFragment(value: unknown): value is Fragment {
 	return (
 		typeof value === 'object' &&
@@ -29,10 +33,6 @@ export function isFragment(value: unknown): value is Fragment {
 	);
 }
 
-export function isProperElement(value: unknown): value is ProperElement {
+export function isHTMLOrSVGElement(value: unknown): value is HTMLOrSVGElement {
 	return value instanceof HTMLElement || value instanceof SVGElement;
-}
-
-export function isProperNode(value: unknown): value is ProperNode {
-	return value instanceof CharacterData || value instanceof Element;
 }

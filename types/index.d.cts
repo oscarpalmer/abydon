@@ -2,7 +2,6 @@
 
 import { Key } from '@oscarpalmer/atoms/models';
 
-export type ProperNode = CharacterData | Element;
 export declare class Fragment {
 	private readonly $fragment;
 	private readonly data;
@@ -15,7 +14,7 @@ export declare class Fragment {
 	/**
 	 * Gets a list of the fragment's nodes
 	 */
-	get(): ProperNode[];
+	get(): ChildNode[];
 	identify(identifier: Key): Fragment;
 	/**
 	 * Removes the fragment from the DOM

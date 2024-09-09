@@ -1,10 +1,12 @@
-import type {ProperElement} from '../models';
+import type {HTMLOrSVGElement} from '../models';
 
-const controllers = new WeakMap<ProperElement, AbortController>();
+const controllers = new WeakMap<HTMLOrSVGElement, AbortController>();
 
 const eventNamePattern = /^@([\w-]+)(?::([a-z:]+))?$/i;
 
-function getController(element: ProperElement): AbortController {
+const reason = 'Event removed as element was removed from document by Abydon';
+
+function getController(element: HTMLOrSVGElement): AbortController {
 	let controller = controllers.get(element);
 
 	if (controller == null) {
@@ -27,7 +29,7 @@ function getOptions(options: string): AddEventListenerOptions {
 }
 
 export function mapEvent(
-	element: ProperElement,
+	element: HTMLOrSVGElement,
 	name: string,
 	value: unknown,
 ): void {
@@ -43,9 +45,7 @@ export function mapEvent(
 	}
 }
 
-export function removeEvents(element: ProperElement): void {
-	if (controllers.has(element)) {
-		controllers.get(element)?.abort();
-		controllers.delete(element);
-	}
+export function removeEvents(element: HTMLOrSVGElement): void {
+	controllers.get(element)?.abort(reason);
+	controllers.delete(element);
 }
