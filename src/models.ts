@@ -1,14 +1,16 @@
+import type {Key} from '@oscarpalmer/atoms/models';
 import type {Fragment} from './fragment';
 
 export type FragmentData = {
 	expressions: unknown[];
+	identifier?: Key;
 	items: FragmentItem[];
 	strings: TemplateStringsArray;
 	values: unknown[];
 };
 
 export type FragmentItem = {
-	fragment?: Fragment;
+	fragments?: Fragment[];
 	nodes: ProperNode[];
 };
 

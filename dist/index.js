@@ -433,6 +433,15 @@ class Computed extends ReactiveValue {
 var primitives = new Set(["boolean", "number", "string"]);
 
 // src/helpers/index.ts
+function compareOrder(first, second) {
+  const firstIsLarger = first.length > second.length;
+  const from = firstIsLarger ? first : second;
+  const to = firstIsLarger ? second : first;
+  if (!from.filter((key) => to.includes(key)).every((key, index) => to[index] === key)) {
+    return "dissimilar";
+  }
+  return firstIsLarger ? "removed" : "added";
+}
 function isFragment(value11) {
   return typeof value11 === "object" && value11 != null && "$fragment" in value11 && value11.$fragment === true;
 }
@@ -631,8 +640,71 @@ function mapValue(element, name, value12) {
 var commentExpression = /^<!--abydon\.(\d+)-->$/;
 
 // src/node/value.ts
-function setNodes(nodes, comment, text, value12) {
+function setArray(fragments, nodes, comment, text, value12) {
+  if (value12.length === 0) {
+    if (nodes != null) {
+      replaceNodes(nodes, [comment]);
+    }
+    return;
+  }
+  let templates2 = value12.filter((item) => isFragment(item) && item.identifier != null);
+  const identifiers = templates2.map((fragment) => fragment.identifier);
+  if (new Set(identifiers).size !== templates2.length) {
+    templates2 = [];
+  }
+  if (templates2.length === 0) {
+    const next = value12.flatMap((item) => createNodes(value12));
+    setNodes(nodes, comment, text, next);
+    return {
+      nodes: next
+    };
+  }
+  const oldIdentifiers = fragments?.map((fragment) => fragment.identifier) ?? [];
+  if (nodes == null || oldIdentifiers.some((identifier) => identifier == null)) {
+    const next = templates2.flatMap((template4) => template4.get());
+    setNodes(nodes, comment, text, next);
+    return {
+      fragments: templates2,
+      nodes: next
+    };
+  }
+  const comparison = compareOrder(fragments ?? [], templates2);
+  let position = nodes[0];
+  if (comparison !== "removed") {
+    const before = comparison === "added" && !oldIdentifiers.includes(templates2[0].identifier);
+    const items = templates2.flatMap((template4) => template4.get().map((node) => ({
+      identifier: template4.identifier,
+      value: node
+    })));
+    const { length: length2 } = items;
+    for (let index = 0;index < length2; index += 1) {
+      const item = items[index];
+      if (comparison === "dissimilar" || !oldIdentifiers.includes(item.identifier)) {
+        if (index === 0 && before) {
+          position.before(item.value);
+        } else {
+          position.after(item.value);
+        }
+      }
+      position = item.value;
+    }
+  }
+  const toRemove = fragments?.filter((fragment) => !identifiers.includes(fragment.identifier)) ?? [];
+  const { length } = toRemove;
+  for (let index = 0;index < length; index += 1) {
+    toRemove[index].remove();
+  }
+  return {
+    fragments: templates2,
+    nodes: templates2.flatMap((template4) => template4.get())
+  };
+}
+function setNode(nodes, comment, text, value12) {
   const next = createNodes(value12);
+  setNodes(nodes, comment, text, next);
+  return next;
+}
+function setNodes(nodes, comment, text, next) {
   if (nodes == null) {
     if (comment.parentNode != null) {
       replaceNodes([comment], next);
@@ -642,22 +714,29 @@ function setNodes(nodes, comment, text, value12) {
   } else {
     replaceNodes(nodes, next);
   }
-  return next;
 }
 function setReactiveNode(data, comment, reactive3) {
   const item = data.items.find((item2) => item2.nodes.includes(comment));
   const text = new Text;
+  let fragments;
   let nodes;
   effect(() => {
     const value12 = reactive3.get();
-    const valueIsFragment = isFragment(value12);
-    if (valueIsFragment || isProperNode(value12)) {
-      nodes = setNodes(nodes, comment, text, value12);
+    if (Array.isArray(value12)) {
+      const array7 = setArray(fragments, nodes, comment, text, value12);
+      fragments = array7?.fragments;
+      nodes = array7?.nodes;
     } else {
-      nodes = setText(nodes, comment, text, value12) ? [text] : undefined;
+      const valueIsFragment = isFragment(value12);
+      fragments = valueIsFragment ? [value12] : undefined;
+      if (valueIsFragment || isProperNode(value12)) {
+        nodes = setNode(nodes, comment, text, value12);
+      } else {
+        nodes = setText(nodes, comment, text, value12) ? [text] : undefined;
+      }
     }
     if (item != null) {
-      item.fragment = valueIsFragment ? value12 : undefined;
+      item.fragments = fragments;
       item.nodes = [...nodes ?? [comment]];
     }
   });
@@ -732,6 +811,9 @@ var commentExpression2 = /^abydon\.(\d+)$/;
 class Fragment {
   $fragment = true;
   data;
+  get identifier() {
+    return this.data.identifier;
+  }
   constructor(strings, expressions) {
     this.data = {
       expressions,
@@ -752,17 +834,24 @@ class Fragment {
       this.data.items.splice(0, this.data.items.length, ...templated.map((node2) => ({
         nodes: [node2]
       })));
-      mapNodes(this.data, this.data.items.flatMap((item) => item.fragment?.get() ?? item.nodes));
+      mapNodes(this.data, this.data.items.flatMap((item) => item.fragments?.flatMap((fragment) => fragment.get()) ?? item.nodes));
     }
     return [
-      ...this.data.items.flatMap((item) => item.fragment?.get() ?? item.nodes)
+      ...this.data.items.flatMap((item) => item.fragments?.flatMap((fragment) => fragment.get()) ?? item.nodes)
     ];
+  }
+  identify(identifier) {
+    this.data.identifier = identifier;
+    return this;
   }
   remove() {
     const { length } = this.data.items;
     for (let index = 0;index < length; index += 1) {
-      const { fragment, nodes } = this.data.items[index];
-      fragment?.remove();
+      const { fragments, nodes } = this.data.items[index];
+      const { length: length2 } = fragments ?? [];
+      for (let index2 = 0;index2 < length2; index2 += 1) {
+        fragments?.[index2]?.remove();
+      }
       removeNodes(nodes);
     }
     this.data.items.splice(0, length);

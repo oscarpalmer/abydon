@@ -1,3 +1,4 @@
+import type {Key} from '@oscarpalmer/atoms/models';
 import {html} from '@oscarpalmer/toretto/html';
 import {parse} from './html';
 import type {FragmentData, ProperNode} from './models';
@@ -7,6 +8,10 @@ import {removeNodes} from './helpers/dom';
 export class Fragment {
 	private readonly $fragment = true;
 	private readonly data: FragmentData;
+
+	get identifier(): Key | undefined {
+		return this.data.identifier;
+	}
 
 	constructor(strings: TemplateStringsArray, expressions: unknown[]) {
 		this.data = {
@@ -45,13 +50,25 @@ export class Fragment {
 
 			mapNodes(
 				this.data,
-				this.data.items.flatMap(item => item.fragment?.get() ?? item.nodes),
+				this.data.items.flatMap(
+					item =>
+						item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes,
+				),
 			);
 		}
 
 		return [
-			...this.data.items.flatMap(item => item.fragment?.get() ?? item.nodes),
+			...this.data.items.flatMap(
+				item =>
+					item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes,
+			),
 		];
+	}
+
+	identify(identifier: Key): Fragment {
+		this.data.identifier = identifier;
+
+		return this;
 	}
 
 	/**
@@ -61,9 +78,12 @@ export class Fragment {
 		const {length} = this.data.items;
 
 		for (let index = 0; index < length; index += 1) {
-			const {fragment, nodes} = this.data.items[index];
+			const {fragments, nodes} = this.data.items[index];
+			const {length} = fragments ?? [];
 
-			fragment?.remove();
+			for (let index = 0; index < length; index += 1) {
+				fragments?.[index]?.remove();
+			}
 
 			removeNodes(nodes);
 		}
