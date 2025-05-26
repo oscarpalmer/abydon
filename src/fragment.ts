@@ -1,9 +1,9 @@
 import type {Key} from '@oscarpalmer/atoms/models';
 import {html} from '@oscarpalmer/toretto/html';
-import {parse} from './html';
+import {removeNodes} from './helpers/dom';
 import type {FragmentData} from './models';
 import {mapNodes} from './node';
-import {removeNodes} from './helpers/dom';
+import {parse} from './parse';
 
 export class Fragment {
 	private readonly $fragment = true;
@@ -18,8 +18,8 @@ export class Fragment {
 			expressions,
 			strings,
 			items: [],
-			sentinel: {
-				effects: new Set(),
+			mora: {
+				subscribers: new Set(),
 				values: new Set(),
 			},
 			values: [],
@@ -84,7 +84,7 @@ export class Fragment {
 }
 
 function removeFragment(data: FragmentData): void {
-	removeSentinels(data);
+	removeMora(data);
 
 	const {length} = data.items;
 
@@ -102,14 +102,13 @@ function removeFragment(data: FragmentData): void {
 	data.items.splice(0, length);
 }
 
-function removeSentinels(data: FragmentData): void {
-	const sentinels = [...data.sentinel.effects, ...data.sentinel.values];
-	const {length} = sentinels;
+function removeMora(data: FragmentData): void {
+	const unsubscribers = [...data.mora.subscribers];
 
-	for (let index = 0; index < length; index += 1) {
-		sentinels[index].stop();
+	data.mora.subscribers.clear();
+	data.mora.values.clear();
+
+	for (const unsubscribe of unsubscribers) {
+		unsubscribe();
 	}
-
-	data.sentinel.effects.clear();
-	data.sentinel.values.clear();
 }

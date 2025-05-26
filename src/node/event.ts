@@ -1,4 +1,4 @@
-import type {HTMLOrSVGElement} from '../models';
+import type {HTMLOrSVGElement} from '@oscarpalmer/toretto/models';
 
 const controllers = new WeakMap<HTMLOrSVGElement, AbortController>();
 

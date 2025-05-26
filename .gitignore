@@ -1,6 +1,7 @@
+coverage/
+dist/
 node_modules/
+types/
 www/
 
-dist/**/*
-
-!dist/index.js
+*.tsbuildinfo

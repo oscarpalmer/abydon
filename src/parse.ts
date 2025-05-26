@@ -1,5 +1,4 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
-import {Fragment} from './fragment';
 import type {FragmentData} from './models';
 
 function handleExpression(
@@ -30,13 +29,6 @@ function handleExpression(
 	}
 
 	return `${prefix}${expression}`;
-}
-
-export function html(
-	strings: TemplateStringsArray,
-	...values: unknown[]
-): Fragment {
-	return new Fragment(strings, values);
 }
 
 export function parse(data: FragmentData): string {

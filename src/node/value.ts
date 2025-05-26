@@ -1,9 +1,10 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
 import type {Key} from '@oscarpalmer/atoms/models';
 import {getString} from '@oscarpalmer/atoms/string';
-import {type Reactive, effect} from '@oscarpalmer/sentinel';
+import type {Reactive} from '@oscarpalmer/mora';
+import {isChildNode} from '@oscarpalmer/toretto/is';
 import type {Fragment} from '../fragment';
-import {compareArrays, isChildNode, isFragment} from '../helpers';
+import {compareArrays, isFragment} from '../helpers';
 import {createNodes, replaceNodes} from '../helpers/dom';
 import type {FragmentData, FragmentItem} from '../models';
 
@@ -145,50 +146,55 @@ function setNodes(
 }
 
 export function setReactiveValue(
-	data: FragmentData,
-	comment: Comment,
-	reactive: Reactive,
-): void {
-	const item = data.items.find(item => item.nodes.includes(comment));
-	const text = new Text();
+		data: FragmentData,
+		comment: Comment,
+		reactive: Reactive<unknown>,
+	): void {
+		const item = data.items.find(item => item.nodes.includes(comment));
+		const text = new Text();
 
-	let fragments: Fragment[] | undefined;
-	let nodes: ChildNode[] | undefined;
+		let fragments: Fragment[] | undefined;
+		let nodes: ChildNode[] | undefined;
 
-	data.sentinel.effects.add(
-		effect(() => {
-			const value = reactive.get();
+		data.mora.subscribers.add(
+			reactive.subscribe(value => {
+				if (Array.isArray(value)) {
+					const result = setArray(fragments, nodes, comment, text, value);
 
-			if (Array.isArray(value)) {
-				const result = setArray(fragments, nodes, comment, text, value);
+					fragments =
+						typeof result === 'boolean' ? undefined : result?.fragments;
 
-				fragments = typeof result === 'boolean' ? undefined : result?.fragments;
-
-				nodes =
-					typeof result === 'boolean'
-						? result
-							? [text]
-							: undefined
-						: result?.nodes;
-			} else {
-				const valueIsFragment = isFragment(value);
-
-				fragments = valueIsFragment ? [value] : undefined;
-
-				if (valueIsFragment || isChildNode(value)) {
-					nodes = setNodes(fragments, nodes, comment, text, createNodes(value));
+					nodes =
+						typeof result === 'boolean'
+							? result
+								? [text]
+								: undefined
+							: result?.nodes;
 				} else {
-					nodes = setText(fragments, nodes, comment, text, value);
-				}
-			}
+					const valueIsFragment = isFragment(value);
 
-			if (item != null) {
-				item.fragments = fragments;
-				item.nodes = [...(nodes ?? [comment])];
-			}
-		}),
-	);
-}
+					fragments = valueIsFragment ? [value] : undefined;
+
+					if (valueIsFragment || isChildNode(value)) {
+						nodes = setNodes(
+							fragments,
+							nodes,
+							comment,
+							text,
+							createNodes(value),
+						);
+					} else {
+						nodes = setText(fragments, nodes, comment, text, value);
+					}
+				}
+
+				if (item != null) {
+					item.fragments = fragments;
+					item.nodes = [...(nodes ?? [comment])];
+				}
+			}),
+		);
+	}
 
 function setText(
 	fragments: Fragment[] | undefined,

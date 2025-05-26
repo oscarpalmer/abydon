@@ -1,6 +1,7 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
-import {computed, isReactive} from '@oscarpalmer/sentinel';
-import type {FragmentData, HTMLOrSVGElement} from '../../models';
+import {computed, isReactive} from '@oscarpalmer/mora';
+import type {HTMLOrSVGElement} from '@oscarpalmer/toretto/models';
+import type {FragmentData} from '../../models';
 import {mapEvent} from '../event';
 import {setAttribute} from './value';
 
@@ -61,7 +62,7 @@ function setComputedAttribute(
 ): void {
 	const value = computed(callback);
 
-	data.sentinel.values.add(value);
+	data.mora.values.add(value);
 
 	setAttribute(data, element, name, value);
 }

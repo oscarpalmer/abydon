@@ -1,24 +1,22 @@
 import type {Key} from '@oscarpalmer/atoms/models';
-import type {Effect, Reactive} from '@oscarpalmer/sentinel';
+import type {Reactive} from '@oscarpalmer/mora';
 import type {Fragment} from './fragment';
 
 export type FragmentData = {
 	expressions: unknown[];
 	identifier?: Key;
 	items: FragmentItem[];
-	sentinel: FragmentDataSentinel;
+	mora: FragmentDataMora;
 	strings: TemplateStringsArray;
 	values: unknown[];
 };
 
-type FragmentDataSentinel = {
-	effects: Set<Effect>;
-	values: Set<Reactive>;
+type FragmentDataMora = {
+	subscribers: Set<() => void>;
+	values: Set<Reactive<unknown>>;
 };
 
 export type FragmentItem = {
 	fragments?: Fragment[];
 	nodes: ChildNode[];
 };
-
-export type HTMLOrSVGElement = HTMLElement | SVGElement;

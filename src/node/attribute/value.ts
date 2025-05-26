@@ -1,11 +1,12 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {getString} from '@oscarpalmer/atoms/string';
-import {effect, isReactive} from '@oscarpalmer/sentinel';
+import {isReactive} from '@oscarpalmer/mora';
 import {
 	isBooleanAttribute,
 	setAttribute as setAttr,
 } from '@oscarpalmer/toretto/attribute';
-import type {FragmentData, HTMLOrSVGElement} from '../../models';
+import type {HTMLOrSVGElement} from '@oscarpalmer/toretto/models';
+import type {FragmentData} from '../../models';
 
 const classExpression = /^class\./;
 const styleFullExpression = /^style\.([\w-]+)(?:\.([\w-]+))?$/;
@@ -51,11 +52,7 @@ function setClasses(
 	const classes = name.slice(6).split('.');
 
 	if (isReactive(value)) {
-		data.sentinel.effects.add(
-			effect(() => {
-				update(value.get());
-			}),
-		);
+		data.mora.subscribers.add(value.subscribe(update));
 	} else {
 		update(value);
 	}
@@ -82,11 +79,7 @@ function setStyle(
 
 	if (property != null) {
 		if (isReactive(value)) {
-			data.sentinel.effects.add(
-				effect(() => {
-					update(value.get());
-				}),
-			);
+			data.mora.subscribers.add(value.subscribe(update));
 		} else {
 			update(value);
 		}
@@ -107,9 +100,9 @@ function setValue(
 			: setAttr;
 
 	if (isReactive(value)) {
-		data.sentinel.effects.add(
-			effect(() => {
-				callback(element, name, value.get());
+		data.mora.subscribers.add(
+			value.subscribe(next => {
+				callback(element, name, next);
 			}),
 		);
 	} else {

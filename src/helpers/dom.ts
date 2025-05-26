@@ -1,6 +1,7 @@
 import {getString} from '@oscarpalmer/atoms/string';
-import {isChildNode, isFragment, isHTMLOrSVGElement} from './index';
+import {isChildNode, isHTMLOrSVGElement} from '@oscarpalmer/toretto/is';
 import {removeEvents} from '../node/event';
+import {isFragment} from './index';
 
 export function createNodes(value: unknown): ChildNode[] {
 	if (isFragment(value)) {
