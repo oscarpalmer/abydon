@@ -6,10 +6,6 @@ function handleExpression(
 	prefix: string,
 	expression: unknown,
 ): string {
-	if (isNullableOrWhitespace(expression)) {
-		return prefix;
-	}
-
 	if (Array.isArray(expression)) {
 		const {length} = expression;
 
@@ -22,13 +18,16 @@ function handleExpression(
 		return `${prefix}${expressions}`;
 	}
 
-	if (typeof expression === 'function' || typeof expression === 'object') {
+	if (
+		typeof expression === 'function' ||
+		(typeof expression === 'object' && expression != null)
+	) {
 		const index = data.values.push(expression) - 1;
 
 		return `${prefix}<!--abydon.${index}-->`;
 	}
 
-	return `${prefix}${expression}`;
+	return isNullableOrWhitespace(expression) ? prefix : `${prefix}${expression}`;
 }
 
 export function parse(data: FragmentData): string {

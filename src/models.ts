@@ -6,17 +6,17 @@ export type FragmentData = {
 	expressions: unknown[];
 	identifier?: Key;
 	items: FragmentItem[];
-	mora: FragmentDataMora;
+	mora: MoraData;
 	strings: TemplateStringsArray;
 	values: unknown[];
-};
-
-type FragmentDataMora = {
-	subscribers: Set<() => void>;
-	values: Set<Reactive<unknown>>;
 };
 
 export type FragmentItem = {
 	fragments?: Fragment[];
 	nodes: ChildNode[];
+};
+
+type MoraData = {
+	subscribers: Set<() => void>;
+	values: Set<Reactive<unknown>>;
 };

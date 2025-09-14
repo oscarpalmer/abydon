@@ -41,7 +41,7 @@ export class Fragment {
 			const parsed = parse(this.data);
 
 			const templated = html(parsed, {
-				sanitiseBooleanAttributes: false,
+				sanitizeBooleanAttributes: false,
 			});
 
 			this.data.items.splice(

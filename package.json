@@ -4,40 +4,45 @@
 		"url": "https://oscarpalmer.se"
 	},
 	"dependencies": {
-		"@oscarpalmer/atoms": "^0.100",
-		"@oscarpalmer/mora": "^0.12",
-		"@oscarpalmer/toretto": "^0.20"
+		"@oscarpalmer/atoms": "^0.108",
+		"@oscarpalmer/mora": "^0.21",
+		"@oscarpalmer/toretto": "^0.22"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9",
-		"@oscarpalmer/oui": "^0.9",
+		"@biomejs/biome": "^2.2",
+		"@oscarpalmer/oui": "^0.17",
 		"@rollup/plugin-node-resolve": "^16",
 		"@rollup/plugin-typescript": "^12.1",
-		"@types/node": "^22.15",
-		"@vitest/coverage-istanbul": "^3.1",
+		"@types/node": "^24.3",
+		"@vitest/coverage-istanbul": "^3.2",
 		"dts-bundle-generator": "^9.5",
 		"glob": "^11",
 		"jsdom": "^26.1",
+		"rollup": "^4.50",
 		"tslib": "^2.8",
-		"typescript": "^5.8",
-		"vite": "^6.3",
-		"vitest": "^3.1"
+		"typescript": "^5.9",
+		"vite": "npm:rolldown-vite@latest",
+		"vitest": "^3.2"
 	},
 	"exports": {
+		"./package.json": "./package.json",
 		".": {
-			"import": {
-				"types": "./types/index.d.ts",
-				"default": "./dist/index.js"
-			},
-			"require": {
-				"types": "./types/index.d.cts",
-				"default": "./dist/index.cjs"
-			}
+			"types": "./types/index.d.ts",
+			"default": "./dist/index.js"
 		}
 	},
-	"files": ["dist/index.js", "dist/**/*.mjs", "src", "types"],
+	"files": ["dist", "src", "types"],
+	"keywords": [
+		"components",
+		"dom",
+		"library",
+		"literals",
+		"reactive",
+		"signal",
+		"template",
+		"vanilla"
+	],
 	"license": "MIT",
-	"main": "dist/index.cjs",
 	"module": "dist/index.js",
 	"name": "@oscarpalmer/abydon",
 	"repository": {
@@ -45,15 +50,15 @@
 		"url": "git+https://github.com/oscarpalmer/abydon.git"
 	},
 	"scripts": {
-		"build": "npm run clean && npm run build:js && npm run rollup && npm run types",
-		"build:js": "npx vite build",
+		"build": "npm run clean && npx vite build && npm run rollup:build && npm run types",
 		"clean": "rm -rf ./dist && rm -rf ./types && rm -f ./tsconfig.tsbuildinfo",
-		"rollup": "npx rollup -c",
+		"rollup:build": "npx rollup -c",
+		"rollup:watch": "npx rollup -c --watch",
 		"test": "npx vitest --coverage",
 		"types": "npx tsc && npx dts-bundle-generator --config ./dts.config.cts --silent",
 		"watch": "npx vite build --watch"
 	},
 	"type": "module",
 	"types": "types/index.d.cts",
-	"version": "0.12.0"
+	"version": "0.13.0"
 }

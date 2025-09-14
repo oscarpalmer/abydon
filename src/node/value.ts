@@ -146,55 +146,48 @@ function setNodes(
 }
 
 export function setReactiveValue(
-		data: FragmentData,
-		comment: Comment,
-		reactive: Reactive<unknown>,
-	): void {
-		const item = data.items.find(item => item.nodes.includes(comment));
-		const text = new Text();
+	data: FragmentData,
+	comment: Comment,
+	reactive: Reactive<unknown>,
+): void {
+	const item = data.items.find(item => item.nodes.includes(comment));
+	const text = new Text();
 
-		let fragments: Fragment[] | undefined;
-		let nodes: ChildNode[] | undefined;
+	let fragments: Fragment[] | undefined;
+	let nodes: ChildNode[] | undefined;
 
-		data.mora.subscribers.add(
-			reactive.subscribe(value => {
-				if (Array.isArray(value)) {
-					const result = setArray(fragments, nodes, comment, text, value);
+	data.mora.subscribers.add(
+		reactive.subscribe(value => {
+			if (Array.isArray(value)) {
+				const result = setArray(fragments, nodes, comment, text, value);
 
-					fragments =
-						typeof result === 'boolean' ? undefined : result?.fragments;
+				fragments = typeof result === 'boolean' ? undefined : result?.fragments;
 
-					nodes =
-						typeof result === 'boolean'
-							? result
-								? [text]
-								: undefined
-							: result?.nodes;
+				nodes =
+					typeof result === 'boolean'
+						? result
+							? [text]
+							: undefined
+						: result?.nodes;
+			} else {
+				const valueIsFragment = isFragment(value);
+
+				fragments = valueIsFragment ? [value] : undefined;
+
+				if (valueIsFragment || isChildNode(value)) {
+					nodes = setNodes(fragments, nodes, comment, text, createNodes(value));
 				} else {
-					const valueIsFragment = isFragment(value);
-
-					fragments = valueIsFragment ? [value] : undefined;
-
-					if (valueIsFragment || isChildNode(value)) {
-						nodes = setNodes(
-							fragments,
-							nodes,
-							comment,
-							text,
-							createNodes(value),
-						);
-					} else {
-						nodes = setText(fragments, nodes, comment, text, value);
-					}
+					nodes = setText(fragments, nodes, comment, text, value);
 				}
+			}
 
-				if (item != null) {
-					item.fragments = fragments;
-					item.nodes = [...(nodes ?? [comment])];
-				}
-			}),
-		);
-	}
+			if (item != null) {
+				item.fragments = fragments;
+				item.nodes = [...(nodes ?? [comment])];
+			}
+		}),
+	);
+}
 
 function setText(
 	fragments: Fragment[] | undefined,

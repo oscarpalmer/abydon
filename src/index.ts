@@ -8,5 +8,5 @@ export function html(
 	return new Fragment(strings, values);
 }
 
-export type {Fragment} from './fragment';
 export * from '@oscarpalmer/mora';
+export type {Fragment} from './fragment';
