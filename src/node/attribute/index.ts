@@ -1,14 +1,14 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {computed, isReactive} from '@oscarpalmer/mora';
+import {isBooleanAttribute, setProperty} from '@oscarpalmer/toretto/attribute';
 import type {HTMLOrSVGElement} from '@oscarpalmer/toretto/models';
+import {EXPRESSION_COMMENT_FULL} from '../../constants';
 import type {FragmentData} from '../../models';
 import {mapEvent} from '../event';
 import {setAttribute} from './value';
 
-const commentExpression = /^<!--abydon\.(\d+)-->$/;
-
 function getValue(data: FragmentData, original: string): unknown {
-	const matches = commentExpression.exec(original ?? '');
+	const matches = EXPRESSION_COMMENT_FULL.exec(original ?? '');
 
 	return matches == null ? original : data.values[+matches[1]];
 }
@@ -25,14 +25,23 @@ export function mapAttributes(
 
 		const actual = getValue(data, value);
 
-		if (name.startsWith('@')) {
-			mapEvent(element, name, actual);
-		} else if (
-			name.includes('.') ||
-			typeof value === 'function' ||
-			isReactive(actual)
-		) {
-			mapValue(data, element, name, actual);
+		switch (true) {
+			case name.startsWith('@'):
+				mapEvent(element, name, actual);
+				break;
+
+			case name.includes('.') ||
+				typeof actual === 'function' ||
+				isReactive(actual):
+				mapValue(data, element, name, actual);
+				break;
+
+			case isBooleanAttribute(name):
+				setProperty(element, name, value);
+				break;
+
+			default:
+				break;
 		}
 	}
 }
@@ -43,14 +52,10 @@ function mapValue(
 	name: string,
 	value: unknown,
 ): void {
-	switch (true) {
-		case typeof value === 'function':
-			setComputedAttribute(data, element, name, value as GenericCallback);
-			break;
-
-		default:
-			setAttribute(data, element, name, value);
-			break;
+	if (typeof value === 'function') {
+		setComputedAttribute(data, element, name, value as GenericCallback);
+	} else {
+		setAttribute(data, element, name, value);
 	}
 }
 

@@ -1,18 +1,17 @@
 import type {HTMLOrSVGElement} from '@oscarpalmer/toretto/models';
-
-const controllers = new WeakMap<HTMLOrSVGElement, AbortController>();
-
-const eventNamePattern = /^@([\w-]+)(?::([a-z:]+))?$/i;
-
-const reason = 'Event removed as element was removed from document by Abydon';
+import {
+	ABORT_CONTROLLERS,
+	EXPRESSION_EVENT_NAME,
+	REASON_EVENT_REMOVED,
+} from '../constants';
 
 function getController(element: HTMLOrSVGElement): AbortController {
-	let controller = controllers.get(element);
+	let controller = ABORT_CONTROLLERS.get(element);
 
 	if (controller == null) {
 		controller = new AbortController();
 
-		controllers.set(element, controller);
+		ABORT_CONTROLLERS.set(element, controller);
 	}
 
 	return controller;
@@ -24,7 +23,7 @@ function getOptions(options: string): AddEventListenerOptions {
 	return {
 		capture: parts.includes('c') || parts.includes('capture'),
 		once: parts.includes('o') || parts.includes('once'),
-		passive: !parts.includes('a') && !parts.includes('active'),
+		passive: !(parts.includes('a') || parts.includes('active')),
 	};
 }
 
@@ -35,7 +34,7 @@ export function mapEvent(
 ): void {
 	element.removeAttribute(name);
 
-	const [, type, options] = eventNamePattern.exec(name) ?? [];
+	const [, type, options] = EXPRESSION_EVENT_NAME.exec(name) ?? [];
 
 	if (typeof value === 'function' && type != null) {
 		element.addEventListener(type, value as EventListener, {
@@ -46,6 +45,6 @@ export function mapEvent(
 }
 
 export function removeEvents(element: HTMLOrSVGElement): void {
-	controllers.get(element)?.abort(reason);
-	controllers.delete(element);
+	ABORT_CONTROLLERS.get(element)?.abort(REASON_EVENT_REMOVED);
+	ABORT_CONTROLLERS.delete(element);
 }

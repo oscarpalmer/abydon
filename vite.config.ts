@@ -16,7 +16,7 @@ export default defineConfig({
 	build: {
 		lib: {
 			entry: [],
-			formats: watch ? ['es'] : ['es'], // 'cjs'
+			formats: watch ? ['es'] : ['es'],
 		},
 		minify: false,
 		outDir: './dist',
@@ -33,7 +33,7 @@ export default defineConfig({
 				  ],
 			input: Object.fromEntries(files),
 			output: {
-				// generatedCode: 'es2015',
+				generatedCode: 'es2015',
 				preserveModules: true,
 			},
 		},

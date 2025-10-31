@@ -1,5 +1,5 @@
 import '@oscarpalmer/mora';
-import {Fragment} from './fragment';
+import { Fragment } from './fragment';
 
 export function html(
 	strings: TemplateStringsArray,
@@ -9,4 +9,5 @@ export function html(
 }
 
 export * from '@oscarpalmer/mora';
-export type {Fragment} from './fragment';
+export type { Fragment } from './fragment';
+

@@ -1,16 +1,15 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {computed, isReactive} from '@oscarpalmer/mora';
 import {isHTMLOrSVGElement} from '@oscarpalmer/toretto/is';
+import {EXPRESSION_COMMENT_CONTENT} from '../constants';
 import {isFragment} from '../helpers';
 import {createNodes} from '../helpers/dom';
 import type {FragmentData} from '../models';
 import {mapAttributes} from './attribute';
 import {setReactiveValue} from './value';
 
-const commentExpression = /^abydon\.(\d+)$/;
-
 function mapNode(data: FragmentData, comment: Comment): void {
-	const matches = commentExpression.exec(comment.textContent ?? '');
+	const matches = EXPRESSION_COMMENT_CONTENT.exec(comment.textContent ?? '');
 	const value = matches == null ? null : data.values[+matches[1]];
 
 	if (value != null) {
@@ -61,7 +60,7 @@ function replaceComment(
 	comment: Comment,
 	value: unknown,
 ): void {
-	const item = data.items.find(item => item.nodes.includes(comment));
+	const item = data.items.find(item => item.nodes?.includes(comment));
 	const nodes = createNodes(value);
 
 	if (item != null) {

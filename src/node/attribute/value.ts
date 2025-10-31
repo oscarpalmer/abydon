@@ -6,11 +6,13 @@ import {
 	setAttribute as setAttr,
 } from '@oscarpalmer/toretto/attribute';
 import type {HTMLOrSVGElement} from '@oscarpalmer/toretto/models';
+import {
+	ATTRIBUTE_CLASS_PREFIX_LENGTH,
+	EXPRESSION_ATTRIBUTE_CLASS,
+	EXPRESSION_ATTRIBUTE_STYLE_FULL,
+	EXPRESSION_ATTRIBUTE_STYLE_PREFIX,
+} from '../../constants';
 import type {FragmentData} from '../../models';
-
-const classExpression = /^class\./;
-const styleFullExpression = /^style\.([\w-]+)(?:\.([\w-]+))?$/;
-const stylePrefixExpression = /^style\./;
 
 export function setAttribute(
 	data: FragmentData,
@@ -21,11 +23,11 @@ export function setAttribute(
 	element.removeAttribute(name);
 
 	switch (true) {
-		case classExpression.test(name):
+		case EXPRESSION_ATTRIBUTE_CLASS.test(name):
 			setClasses(data, element, name, value);
 			return;
 
-		case stylePrefixExpression.test(name):
+		case EXPRESSION_ATTRIBUTE_STYLE_PREFIX.test(name):
 			setStyle(data, element, name, value);
 			return;
 
@@ -49,7 +51,7 @@ function setClasses(
 		}
 	}
 
-	const classes = name.slice(6).split('.');
+	const classes = name.slice(ATTRIBUTE_CLASS_PREFIX_LENGTH).split('.');
 
 	if (isReactive(value)) {
 		data.mora.subscribers.add(value.subscribe(update));
@@ -64,6 +66,12 @@ function setStyle(
 	name: string,
 	value: unknown,
 ): void {
+	const [, property, unit] = EXPRESSION_ATTRIBUTE_STYLE_FULL.exec(name) ?? [];
+
+	if (property == null) {
+		return;
+	}
+
 	function update(value: unknown): void {
 		if (value == null || value === false || (value === true && unit == null)) {
 			element.style.removeProperty(property);
@@ -75,14 +83,10 @@ function setStyle(
 		}
 	}
 
-	const [, property, unit] = styleFullExpression.exec(name) ?? [];
-
-	if (property != null) {
-		if (isReactive(value)) {
-			data.mora.subscribers.add(value.subscribe(update));
-		} else {
-			update(value);
-		}
+	if (isReactive(value)) {
+		data.mora.subscribers.add(value.subscribe(update));
+	} else {
+		update(value);
 	}
 }
 
@@ -92,12 +96,17 @@ function setValue(
 	name: string,
 	value: unknown,
 ): void {
-	const callback =
-		isBooleanAttribute(name) && name in element
-			? name === 'selected'
-				? updateSelected
-				: updateProperty
-			: setAttr;
+	let callback: (
+		element: HTMLOrSVGElement,
+		name: string,
+		value: unknown,
+	) => void;
+
+	if (isBooleanAttribute(name) && name in element) {
+		callback = name === 'selected' ? updateSelected : updateProperty;
+	} else {
+		callback = setAttr;
+	}
 
 	if (isReactive(value)) {
 		data.mora.subscribers.add(
@@ -107,12 +116,6 @@ function setValue(
 		);
 	} else {
 		callback(element, name, value);
-	}
-}
-
-function triggerSelectChange(select: HTMLSelectElement): void {
-	if (select != null) {
-		select.dispatchEvent(new Event('change', {bubbles: true}));
 	}
 }
 
@@ -133,7 +136,7 @@ function updateSelected(
 	const options = [...(select?.options ?? [])];
 
 	if (select != null && options.includes(element as HTMLOptionElement)) {
-		triggerSelectChange(select);
+		select.dispatchEvent(new Event('change', {bubbles: true}));
 	}
 
 	updateProperty(element, name, value);

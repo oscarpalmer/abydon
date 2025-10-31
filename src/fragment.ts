@@ -1,20 +1,24 @@
-import type {Key} from '@oscarpalmer/atoms/models';
 import {html} from '@oscarpalmer/toretto/html';
 import {removeNodes} from './helpers/dom';
-import type {FragmentData} from './models';
+import type {FragmentConfiguration, FragmentData} from './models';
 import {mapNodes} from './node';
 import {parse} from './parse';
+import { isPlainObject } from '@oscarpalmer/atoms';
 
 export class Fragment {
-	private readonly $fragment = true;
-	private readonly data: FragmentData;
+	readonly #data: FragmentData;
 
-	get identifier(): Key | undefined {
-		return this.data.identifier;
+	readonly #configuration: Required<FragmentConfiguration> = {
+		identifier: undefined,
+		ignoreCache: false,
+	}
+
+	get identifier(): unknown {
+		return this.#configuration.identifier;
 	}
 
 	constructor(strings: TemplateStringsArray, expressions: unknown[]) {
-		this.data = {
+		this.#data = {
 			expressions,
 			strings,
 			items: [],
@@ -24,6 +28,10 @@ export class Fragment {
 			},
 			values: [],
 		};
+
+		Object.defineProperty(this, '$fragment', {
+			value: true,
+		});
 	}
 
 	/**
@@ -33,44 +41,64 @@ export class Fragment {
 		element.append(...this.get());
 	}
 
+	configure(configuration: FragmentConfiguration): Fragment {
+		const actual = isPlainObject(configuration) ? configuration : {};
+
+		if (actual.identifier !== undefined) {
+			this.#configuration.identifier = actual.identifier;
+		}
+
+		if (typeof actual.ignoreCache === 'boolean') {
+			this.#configuration.ignoreCache = actual.ignoreCache;
+		}
+
+		return this;
+	}
+
 	/**
 	 * Gets a list of the fragment's nodes
 	 */
 	get(): ChildNode[] {
-		if (this.data.items.length === 0) {
-			const parsed = parse(this.data);
+		const data = this.#data;
+
+		if (data.items.length === 0) {
+			const parsed = parse(data);
 
 			const templated = html(parsed, {
 				sanitizeBooleanAttributes: false,
 			});
 
-			this.data.items.splice(
+			if (this.#configuration.ignoreCache) {
+				html.remove(parsed);
+			}
+
+			data.items.splice(
 				0,
-				this.data.items.length,
+				data.items.length,
 				...templated.map(node => ({
 					nodes: [node as ChildNode],
 				})),
 			);
 
 			mapNodes(
-				this.data,
-				this.data.items.flatMap(
+				data,
+				data.items.flatMap(
 					item =>
-						item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes,
+						item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes ?? [],
 				),
 			);
 		}
 
 		return [
-			...this.data.items.flatMap(
+			...data.items.flatMap(
 				item =>
-					item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes,
+					item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes ?? [],
 			),
 		];
 	}
 
-	identify(identifier: Key): Fragment {
-		this.data.identifier = identifier;
+	identify(identifier: unknown): Fragment {
+		this.#configuration.identifier = identifier;
 
 		return this;
 	}
@@ -79,7 +107,7 @@ export class Fragment {
 	 * Removes the fragment from the DOM
 	 */
 	remove(): void {
-		removeFragment(this.data);
+		removeFragment(this.#data);
 	}
 }
 
@@ -90,16 +118,16 @@ function removeFragment(data: FragmentData): void {
 
 	for (let index = 0; index < length; index += 1) {
 		const {fragments, nodes} = data.items[index];
-		const {length} = fragments ?? [];
+		const length = fragments?.length ?? 0;
 
 		for (let index = 0; index < length; index += 1) {
 			fragments?.[index]?.remove();
 		}
 
-		removeNodes(nodes);
+		removeNodes(nodes ?? []);
 	}
 
-	data.items.splice(0, length);
+	data.items.length = 0;
 }
 
 function removeMora(data: FragmentData): void {

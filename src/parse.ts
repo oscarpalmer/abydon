@@ -31,17 +31,24 @@ function handleExpression(
 }
 
 export function parse(data: FragmentData): string {
+	if (data.template != null) {
+		return data.template;
+	}
+
 	const {length} = data.strings;
 
-	let template = '';
+	data.template = '';
 
 	for (let index = 0; index < length; index += 1) {
-		template += handleExpression(
+		data.template += handleExpression(
 			data,
 			data.strings[index],
 			data.expressions[index],
 		);
 	}
 
-	return template;
+	data.expressions = [];
+	data.strings = [] as never;
+
+	return data.template;
 }

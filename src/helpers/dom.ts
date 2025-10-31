@@ -16,7 +16,7 @@ export function createNodes(value: unknown): ChildNode[] {
 }
 
 export function removeNodes(nodes: ChildNode[]): void {
-	sanitiseNodes(nodes);
+	sanitizeNodes(nodes);
 
 	const {length} = nodes;
 
@@ -35,7 +35,7 @@ export function replaceNodes(from: ChildNode[], to: ChildNode[]): void {
 	}
 }
 
-function sanitiseNodes(nodes: ChildNode[]): void {
+function sanitizeNodes(nodes: ChildNode[]): void {
 	const {length} = nodes;
 
 	for (let index = 0; index < length; index += 1) {
@@ -46,7 +46,7 @@ function sanitiseNodes(nodes: ChildNode[]): void {
 		}
 
 		if (node.hasChildNodes()) {
-			sanitiseNodes([...node.childNodes] as ChildNode[]);
+			sanitizeNodes([...node.childNodes] as ChildNode[]);
 		}
 	}
 }
