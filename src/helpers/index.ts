@@ -1,4 +1,5 @@
 import type {Fragment} from '../fragment';
+import type {Fragments} from '../fragments';
 
 export function compareArrays(
 	first: unknown[],
@@ -25,5 +26,14 @@ export function isFragment(value: unknown): value is Fragment {
 		value != null &&
 		'$fragment' in value &&
 		value.$fragment === true
+	);
+}
+
+export function isFragments(value: unknown): value is Fragments {
+	return (
+		typeof value === 'object' &&
+		value != null &&
+		'$fragments' in value &&
+		value.$fragments === true
 	);
 }

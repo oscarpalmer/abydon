@@ -33,7 +33,6 @@ export default defineConfig({
 				  ],
 			input: Object.fromEntries(files),
 			output: {
-				generatedCode: 'es2015',
 				preserveModules: true,
 			},
 		},

@@ -6,7 +6,7 @@
 	"dependencies": {
 		"@oscarpalmer/atoms": "^0.114",
 		"@oscarpalmer/mora": "^0.23",
-		"@oscarpalmer/toretto": "^0.24"
+		"@oscarpalmer/toretto": "^0.25"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3",
@@ -58,5 +58,5 @@
 	},
 	"type": "module",
 	"types": "types/index.d.ts",
-	"version": "0.14.0"
+	"version": "0.15.0"
 }

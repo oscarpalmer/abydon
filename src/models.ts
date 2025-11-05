@@ -1,4 +1,4 @@
-import type {Reactive} from '@oscarpalmer/mora';
+import type {Reactive, ReactiveArray, Unsubscribe} from '@oscarpalmer/mora';
 import type {Fragment} from './fragment';
 
 export type FragmentConfiguration = {
@@ -19,6 +19,15 @@ export type FragmentItem = {
 	fragments?: Fragment[];
 	nodes?: ChildNode[];
 	text?: Text;
+};
+
+export type FragmentsState = {
+	array: ReactiveArray<unknown>;
+	fragment: (item: unknown) => Fragment;
+	identify: (item: unknown) => unknown;
+	instances: Record<string, Fragment>;
+	mapped: ReactiveArray<Fragment>;
+	subscriber: Unsubscribe | undefined;
 };
 
 type MoraData = {

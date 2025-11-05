@@ -1,8 +1,9 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
-import {computed, isReactive} from '@oscarpalmer/mora';
+import {computed, isReactive, Reactive} from '@oscarpalmer/mora';
 import {isHTMLOrSVGElement} from '@oscarpalmer/toretto/is';
 import {EXPRESSION_COMMENT_CONTENT} from '../constants';
-import {isFragment} from '../helpers';
+import {handleFragments} from '../fragments';
+import {isFragment, isFragments} from '../helpers';
 import {createNodes} from '../helpers/dom';
 import type {FragmentData} from '../models';
 import {mapAttributes} from './attribute';
@@ -43,6 +44,15 @@ function mapValue(data: FragmentData, comment: Comment, value: unknown): void {
 	switch (true) {
 		case typeof value === 'function':
 			setComputedValue(data, comment, value as GenericCallback);
+			break;
+
+		case isFragments(value):
+			handleFragments(value, false);
+			setReactiveValue(
+				data,
+				comment,
+				value.items as Reactive<unknown[], unknown>,
+			);
 			break;
 
 		case isReactive(value):

@@ -1,9 +1,11 @@
+import {isPlainObject} from '@oscarpalmer/atoms/is';
 import {html} from '@oscarpalmer/toretto/html';
+import {handleFragments} from './fragments';
+import {isFragments} from './helpers';
 import {removeNodes} from './helpers/dom';
 import type {FragmentConfiguration, FragmentData} from './models';
 import {mapNodes} from './node';
 import {parse} from './parse';
-import { isPlainObject } from '@oscarpalmer/atoms';
 
 export class Fragment {
 	readonly #data: FragmentData;
@@ -11,13 +13,20 @@ export class Fragment {
 	readonly #configuration: Required<FragmentConfiguration> = {
 		identifier: undefined,
 		ignoreCache: false,
-	}
+	};
 
+	/**
+	 * Fragment identifier
+	 */
 	get identifier(): unknown {
 		return this.#configuration.identifier;
 	}
 
 	constructor(strings: TemplateStringsArray, expressions: unknown[]) {
+		Object.defineProperty(this, '$fragment', {
+			value: true,
+		});
+
 		this.#data = {
 			expressions,
 			strings,
@@ -28,19 +37,21 @@ export class Fragment {
 			},
 			values: [],
 		};
-
-		Object.defineProperty(this, '$fragment', {
-			value: true,
-		});
 	}
 
 	/**
-	 * Appends the fragment to the given element
+	 * Append the fragment to the given element
+	 * @param element Element to append to
 	 */
 	appendTo(element: Element): void {
 		element.append(...this.get());
 	}
 
+	/**
+	 * Configure the fragment
+	 * @param configuration Configuration options
+	 * @returns Fragment
+	 */
 	configure(configuration: FragmentConfiguration): Fragment {
 		const actual = isPlainObject(configuration) ? configuration : {};
 
@@ -56,7 +67,8 @@ export class Fragment {
 	}
 
 	/**
-	 * Gets a list of the fragment's nodes
+	 * Get a list of the fragment's nodes
+	 * @returns List of nodes
 	 */
 	get(): ChildNode[] {
 		const data = this.#data;
@@ -65,12 +77,9 @@ export class Fragment {
 			const parsed = parse(data);
 
 			const templated = html(parsed, {
+				ignoreCache: this.#configuration.ignoreCache,
 				sanitizeBooleanAttributes: false,
 			});
-
-			if (this.#configuration.ignoreCache) {
-				html.remove(parsed);
-			}
 
 			data.items.splice(
 				0,
@@ -84,7 +93,9 @@ export class Fragment {
 				data,
 				data.items.flatMap(
 					item =>
-						item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes ?? [],
+						item.fragments?.flatMap(fragment => fragment.get()) ??
+						item.nodes ??
+						[],
 				),
 			);
 		}
@@ -92,11 +103,21 @@ export class Fragment {
 		return [
 			...data.items.flatMap(
 				item =>
-					item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes ?? [],
+					item.fragments?.flatMap(fragment => fragment.get()) ??
+					item.nodes ??
+					[],
 			),
 		];
 	}
 
+	/**
+	 * Set an identifier for the fragment
+	 *
+	 * _An identifier can be used to uniquely identify a fragment,
+	 * which helps prevent re-rendering in certain scenarios._
+	 * @param identifier Identifier
+	 * @returns Fragment
+	 */
 	identify(identifier: unknown): Fragment {
 		this.#configuration.identifier = identifier;
 
@@ -104,7 +125,7 @@ export class Fragment {
 	}
 
 	/**
-	 * Removes the fragment from the DOM
+	 * Remove the fragment from the DOM
 	 */
 	remove(): void {
 		removeFragment(this.#data);
@@ -114,20 +135,34 @@ export class Fragment {
 function removeFragment(data: FragmentData): void {
 	removeMora(data);
 
-	const {length} = data.items;
+	let {length} = data.items;
 
 	for (let index = 0; index < length; index += 1) {
 		const {fragments, nodes} = data.items[index];
-		const length = fragments?.length ?? 0;
+		const fragmentsLength = fragments?.length ?? 0;
 
-		for (let index = 0; index < length; index += 1) {
-			fragments?.[index]?.remove();
+		for (
+			let fragmentIndex = 0;
+			fragmentIndex < fragmentsLength;
+			fragmentIndex += 1
+		) {
+			fragments?.[fragmentIndex]?.remove();
 		}
 
 		removeNodes(nodes ?? []);
 	}
 
 	data.items.length = 0;
+
+	length = data.values.length;
+
+	for (let index = 0; index < length; index += 1) {
+		const value = data.values[index];
+
+		if (isFragments(value)) {
+			handleFragments(value, true);
+		}
+	}
 }
 
 function removeMora(data: FragmentData): void {

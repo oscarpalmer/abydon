@@ -105,6 +105,22 @@ function removeFragments(fragments: Fragment[] | undefined): void {
 	}
 }
 
+function replaceText(
+	item: FragmentItem,
+	comment: Comment,
+	isNullable: boolean,
+): void {
+	let to: ChildNode[];
+
+	if (isNullable) {
+		to = [comment];
+	} else {
+		to = item.text == null ? [] : [item.text];
+	}
+
+	replaceNodes(item.nodes ?? [], to);
+}
+
 function setArray(
 	item: FragmentItem,
 	comment: Comment,
@@ -213,7 +229,11 @@ function setReactiveValueForArray(
 	item.fragments = typeof result === 'boolean' ? undefined : result?.fragments;
 
 	if (typeof result === 'boolean') {
-		item.nodes = result ? item.text == null ? [] : [item.text] : undefined;
+		if (result) {
+			item.nodes = item.text == null ? [] : [item.text];
+		} else {
+			item.nodes = undefined;
+		}
 	} else {
 		item.nodes = result?.nodes;
 	}
@@ -249,7 +269,7 @@ function setText(
 	let result = false;
 
 	if (item.nodes != null) {
-		replaceNodes(item.nodes, isNullable ? [comment] : item.text == null ? [] : [item.text]);
+		replaceText(item, comment, isNullable);
 
 		result = !isNullable;
 	} else if (isNullable && comment.parentNode == null) {
@@ -264,5 +284,7 @@ function setText(
 
 	removeFragments(item.fragments);
 
-	return result ? item.text == null ? [] : [item.text] : undefined;
+	if (result) {
+		return item.text == null ? [] : [item.text];
+	}
 }
