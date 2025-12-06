@@ -1,9 +1,5 @@
 import type {HTMLOrSVGElement} from '@oscarpalmer/toretto/models';
-import {
-	ABORT_CONTROLLERS,
-	EXPRESSION_EVENT_NAME,
-	REASON_EVENT_REMOVED,
-} from '../constants';
+import {ABORT_CONTROLLERS, EXPRESSION_EVENT_NAME, REASON_EVENT_REMOVED} from '../constants';
 
 function getController(element: HTMLOrSVGElement): AbortController {
 	let controller = ABORT_CONTROLLERS.get(element);
@@ -27,11 +23,7 @@ function getOptions(options: string): AddEventListenerOptions {
 	};
 }
 
-export function mapEvent(
-	element: HTMLOrSVGElement,
-	name: string,
-	value: unknown,
-): void {
+export function mapEvent(element: HTMLOrSVGElement, name: string, value: unknown): void {
 	element.removeAttribute(name);
 
 	const [, type, options] = EXPRESSION_EVENT_NAME.exec(name) ?? [];

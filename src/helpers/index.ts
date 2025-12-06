@@ -9,11 +9,7 @@ export function compareArrays(
 	const from = firstIsLarger ? first : second;
 	const to = firstIsLarger ? second : first;
 
-	if (
-		!from
-			.filter(key => to.includes(key))
-			.every((key, index) => to[index] === key)
-	) {
+	if (!from.filter(key => to.includes(key)).every((key, index) => to[index] === key)) {
 		return 'dissimilar';
 	}
 
@@ -22,18 +18,12 @@ export function compareArrays(
 
 export function isFragment(value: unknown): value is Fragment {
 	return (
-		typeof value === 'object' &&
-		value != null &&
-		'$fragment' in value &&
-		value.$fragment === true
+		typeof value === 'object' && value != null && '$fragment' in value && value.$fragment === true
 	);
 }
 
 export function isFragments(value: unknown): value is Fragments {
 	return (
-		typeof value === 'object' &&
-		value != null &&
-		'$fragments' in value &&
-		value.$fragments === true
+		typeof value === 'object' && value != null && '$fragments' in value && value.$fragments === true
 	);
 }

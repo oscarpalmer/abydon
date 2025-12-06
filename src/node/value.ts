@@ -33,8 +33,7 @@ function addToArray(
 ): void {
 	let position = nodes[0];
 
-	const before =
-		added && !identifiers.previous.includes(items.templates[0].identifier);
+	const before = added && !identifiers.previous.includes(items.templates[0].identifier);
 
 	const next = items.next.flatMap(fragment =>
 		fragment.get().flatMap(node => ({
@@ -67,9 +66,7 @@ function handleArray(
 ): Partial<FragmentItem> {
 	const next = items.templates.map(
 		template =>
-			items.fragments?.find(
-				fragment => fragment.identifier === template.identifier,
-			) ?? template,
+			items.fragments?.find(fragment => fragment.identifier === template.identifier) ?? template,
 	);
 
 	const comparison = compareArrays(items.fragments ?? [], items.templates);
@@ -79,9 +76,7 @@ function handleArray(
 	}
 
 	const toRemove =
-		items.fragments?.filter(
-			fragment => !identifiers.next.includes(fragment.identifier),
-		) ?? [];
+		items.fragments?.filter(fragment => !identifiers.next.includes(fragment.identifier)) ?? [];
 
 	const {length} = toRemove;
 
@@ -105,11 +100,7 @@ function removeFragments(fragments: Fragment[] | undefined): void {
 	}
 }
 
-function replaceText(
-	item: FragmentItem,
-	comment: Comment,
-	isNullable: boolean,
-): void {
+function replaceText(item: FragmentItem, comment: Comment, isNullable: boolean): void {
 	let to: ChildNode[];
 
 	if (isNullable) {
@@ -132,9 +123,7 @@ function setArray(
 		};
 	}
 
-	let templates = value.filter(
-		item => isFragment(item) && item.identifier != null,
-	) as Fragment[];
+	let templates = value.filter(item => isFragment(item) && item.identifier != null) as Fragment[];
 
 	const next = templates.map(fragment => fragment.identifier) as unknown[];
 	const previous = item.fragments?.map(fragment => fragment.identifier) ?? [];
@@ -145,11 +134,7 @@ function setArray(
 
 	const noTemplates = templates.length === 0;
 
-	if (
-		noTemplates ||
-		item.nodes == null ||
-		previous.some(identifier => identifier == null)
-	) {
+	if (noTemplates || item.nodes == null || previous.some(identifier => identifier == null)) {
 		return {
 			fragments: noTemplates ? undefined : templates,
 			nodes: setNodes(
@@ -175,11 +160,7 @@ function setArray(
 	);
 }
 
-function setNodes(
-	item: FragmentItem,
-	comment: Comment,
-	next: ChildNode[],
-): ChildNode[] {
+function setNodes(item: FragmentItem, comment: Comment, next: ChildNode[]): ChildNode[] {
 	if (item.nodes == null) {
 		if (comment.parentNode != null) {
 			replaceNodes([comment], next);
@@ -219,11 +200,7 @@ export function setReactiveValue(
 	);
 }
 
-function setReactiveValueForArray(
-	item: FragmentItem,
-	comment: Comment,
-	value: unknown[],
-): void {
+function setReactiveValueForArray(item: FragmentItem, comment: Comment, value: unknown[]): void {
 	const result = setArray(item, comment, value);
 
 	item.fragments = typeof result === 'boolean' ? undefined : result?.fragments;
@@ -239,11 +216,7 @@ function setReactiveValueForArray(
 	}
 }
 
-function setReactiveValueForSingle(
-	item: FragmentItem,
-	comment: Comment,
-	value: unknown,
-): void {
+function setReactiveValueForSingle(item: FragmentItem, comment: Comment, value: unknown): void {
 	const valueIsFragment = isFragment(value);
 
 	item.fragments = valueIsFragment ? [value] : undefined;
@@ -255,11 +228,7 @@ function setReactiveValueForSingle(
 	}
 }
 
-function setText(
-	item: FragmentItem,
-	comment: Comment,
-	value: unknown,
-): ChildNode[] | undefined {
+function setText(item: FragmentItem, comment: Comment, value: unknown): ChildNode[] | undefined {
 	const isNullable = isNullableOrWhitespace(value);
 
 	if (item.text != null) {

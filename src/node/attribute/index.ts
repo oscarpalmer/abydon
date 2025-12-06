@@ -13,10 +13,7 @@ function getValue(data: FragmentData, original: string): unknown {
 	return matches == null ? original : data.values[+matches[1]];
 }
 
-export function mapAttributes(
-	data: FragmentData,
-	element: HTMLOrSVGElement,
-): void {
+export function mapAttributes(data: FragmentData, element: HTMLOrSVGElement): void {
 	const attributes = [...element.attributes];
 	const {length} = attributes;
 
@@ -30,9 +27,7 @@ export function mapAttributes(
 				mapEvent(element, name, actual);
 				break;
 
-			case name.includes('.') ||
-				typeof actual === 'function' ||
-				isReactive(actual):
+			case name.includes('.') || typeof actual === 'function' || isReactive(actual):
 				mapValue(data, element, name, actual);
 				break;
 

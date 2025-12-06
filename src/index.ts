@@ -8,17 +8,10 @@ export function fragments<Item>(
 	identify: (item: Item) => unknown,
 	fragment: (item: Item) => Fragment,
 ): Fragments {
-	return new Fragments(
-		array as ReactiveArray<unknown>,
-		identify as never,
-		fragment as never,
-	);
+	return new Fragments(array as ReactiveArray<unknown>, identify as never, fragment as never);
 }
 
-export function html(
-	strings: TemplateStringsArray,
-	...values: unknown[]
-): unknown {
+export function html(strings: TemplateStringsArray, ...values: unknown[]): unknown {
 	return new Fragment(strings, values);
 }
 

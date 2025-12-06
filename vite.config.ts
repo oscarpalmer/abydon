@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import {extname, relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {globSync} from 'glob';
+import {globSync} from 'tinyglobby';
 import {defineConfig} from 'vite';
 
 const watch = process.argv.includes('--watch');
@@ -30,7 +30,7 @@ export default defineConfig({
 						'@oscarpalmer/toretto/attribute',
 						'@oscarpalmer/toretto/html',
 						'@oscarpalmer/toretto/is',
-				  ],
+					],
 			input: Object.fromEntries(files),
 			output: {
 				preserveModules: true,

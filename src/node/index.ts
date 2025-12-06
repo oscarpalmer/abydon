@@ -48,11 +48,7 @@ function mapValue(data: FragmentData, comment: Comment, value: unknown): void {
 
 		case isFragments(value):
 			handleFragments(value, false);
-			setReactiveValue(
-				data,
-				comment,
-				value.items as Reactive<unknown[], unknown>,
-			);
+			setReactiveValue(data, comment, value.items as Reactive<unknown[], unknown>);
 			break;
 
 		case isReactive(value):
@@ -65,11 +61,7 @@ function mapValue(data: FragmentData, comment: Comment, value: unknown): void {
 	}
 }
 
-function replaceComment(
-	data: FragmentData,
-	comment: Comment,
-	value: unknown,
-): void {
+function replaceComment(data: FragmentData, comment: Comment, value: unknown): void {
 	const item = data.items.find(item => item.nodes?.includes(comment));
 	const nodes = createNodes(value);
 
@@ -81,11 +73,7 @@ function replaceComment(
 	comment.replaceWith(...nodes);
 }
 
-function setComputedValue(
-	data: FragmentData,
-	comment: Comment,
-	callback: GenericCallback,
-): void {
+function setComputedValue(data: FragmentData, comment: Comment, callback: GenericCallback): void {
 	const value = computed(callback);
 
 	data.mora.values.add(value);

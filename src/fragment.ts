@@ -92,20 +92,14 @@ export class Fragment {
 			mapNodes(
 				data,
 				data.items.flatMap(
-					item =>
-						item.fragments?.flatMap(fragment => fragment.get()) ??
-						item.nodes ??
-						[],
+					item => item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes ?? [],
 				),
 			);
 		}
 
 		return [
 			...data.items.flatMap(
-				item =>
-					item.fragments?.flatMap(fragment => fragment.get()) ??
-					item.nodes ??
-					[],
+				item => item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes ?? [],
 			),
 		];
 	}
@@ -141,11 +135,7 @@ function removeFragment(data: FragmentData): void {
 		const {fragments, nodes} = data.items[index];
 		const fragmentsLength = fragments?.length ?? 0;
 
-		for (
-			let fragmentIndex = 0;
-			fragmentIndex < fragmentsLength;
-			fragmentIndex += 1
-		) {
+		for (let fragmentIndex = 0; fragmentIndex < fragmentsLength; fragmentIndex += 1) {
 			fragments?.[fragmentIndex]?.remove();
 		}
 

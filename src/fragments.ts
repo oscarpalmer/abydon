@@ -38,10 +38,7 @@ export class Fragments {
 	}
 }
 
-export function handleFragments(
-	item: Fragments | FragmentsState,
-	remove: boolean,
-): void {
+export function handleFragments(item: Fragments | FragmentsState, remove: boolean): void {
 	const state = isFragments(item) ? states.get(item) : item;
 
 	if (state != null) {

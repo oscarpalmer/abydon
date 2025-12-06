@@ -1,10 +1,7 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {getString} from '@oscarpalmer/atoms/string';
 import {isReactive} from '@oscarpalmer/mora';
-import {
-	isBooleanAttribute,
-	setAttribute as setAttr,
-} from '@oscarpalmer/toretto/attribute';
+import {isBooleanAttribute, setAttribute as setAttr} from '@oscarpalmer/toretto/attribute';
 import type {HTMLOrSVGElement} from '@oscarpalmer/toretto/models';
 import {
 	ATTRIBUTE_CLASS_PREFIX_LENGTH,
@@ -76,10 +73,7 @@ function setStyle(
 		if (value == null || value === false || (value === true && unit == null)) {
 			element.style.removeProperty(property);
 		} else {
-			element.style.setProperty(
-				property,
-				value === true ? unit : getString(value),
-			);
+			element.style.setProperty(property, value === true ? unit : getString(value));
 		}
 	}
 
@@ -96,11 +90,7 @@ function setValue(
 	name: string,
 	value: unknown,
 ): void {
-	let callback: (
-		element: HTMLOrSVGElement,
-		name: string,
-		value: unknown,
-	) => void;
+	let callback: (element: HTMLOrSVGElement, name: string, value: unknown) => void;
 
 	if (isBooleanAttribute(name) && name in element) {
 		callback = name === 'selected' ? updateSelected : updateProperty;
@@ -119,19 +109,11 @@ function setValue(
 	}
 }
 
-function updateProperty(
-	element: HTMLOrSVGElement,
-	name: string,
-	value: unknown,
-): void {
+function updateProperty(element: HTMLOrSVGElement, name: string, value: unknown): void {
 	(element as unknown as PlainObject)[name] = value === true;
 }
 
-function updateSelected(
-	element: HTMLOrSVGElement,
-	name: string,
-	value: unknown,
-): void {
+function updateSelected(element: HTMLOrSVGElement, name: string, value: unknown): void {
 	const select = element.closest('select') as HTMLSelectElement;
 	const options = [...(select?.options ?? [])];
 
