@@ -1,17 +1,6 @@
-import type {HTMLOrSVGElement} from '@oscarpalmer/toretto/models';
-import {ABORT_CONTROLLERS, EXPRESSION_EVENT_NAME, REASON_EVENT_REMOVED} from '../constants';
-
-function getController(element: HTMLOrSVGElement): AbortController {
-	let controller = ABORT_CONTROLLERS.get(element);
-
-	if (controller == null) {
-		controller = new AbortController();
-
-		ABORT_CONTROLLERS.set(element, controller);
-	}
-
-	return controller;
-}
+import {on} from '@oscarpalmer/toretto/event';
+import type {HTMLOrSVGElement, RemovableEventListener} from '@oscarpalmer/toretto/models';
+import {EXPRESSION_EVENT_NAME} from '../constants';
 
 function getOptions(options: string): AddEventListenerOptions {
 	const parts = options.split(':');
@@ -28,15 +17,40 @@ export function mapEvent(element: HTMLOrSVGElement, name: string, value: unknown
 
 	const [, type, options] = EXPRESSION_EVENT_NAME.exec(name) ?? [];
 
-	if (typeof value === 'function' && type != null) {
-		element.addEventListener(type, value as EventListener, {
-			...getOptions(options ?? ''),
-			signal: getController(element).signal,
-		});
+	if (typeof value !== 'function' || type == null) {
+		return;
 	}
+
+	let listeners = mapped.get(element);
+
+	if (listeners == null) {
+		listeners = [];
+
+		mapped.set(element, listeners);
+	}
+
+	listeners.push(
+		on(element, type, value as EventListener, {
+			...getOptions(options ?? ''),
+		}),
+	);
 }
 
 export function removeEvents(element: HTMLOrSVGElement): void {
-	ABORT_CONTROLLERS.get(element)?.abort(REASON_EVENT_REMOVED);
-	ABORT_CONTROLLERS.delete(element);
+	const listeners = mapped.get(element);
+
+	if (listeners != null) {
+		for (const remove of listeners) {
+			remove();
+		}
+	}
+
+	mapped.delete(element);
 }
+
+//
+
+const mapped = new WeakMap<HTMLOrSVGElement, RemovableEventListener[]>();
+
+// @ts-expect-error debug
+window.mapped = mapped;

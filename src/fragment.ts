@@ -97,11 +97,9 @@ export class Fragment {
 			);
 		}
 
-		return [
-			...data.items.flatMap(
-				item => item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes ?? [],
-			),
-		];
+		return data.items.flatMap(
+			item => item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes ?? [],
+		);
 	}
 
 	/**
