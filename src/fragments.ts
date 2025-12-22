@@ -1,5 +1,6 @@
 import {getString} from '@oscarpalmer/atoms/string';
 import {array, type ReactiveArray} from '@oscarpalmer/mora';
+import {NAME_FRAGMENTS} from './constants';
 import type {Fragment} from './fragment';
 import {isFragment, isFragments} from './helpers';
 import type {FragmentsState} from './models';
@@ -19,7 +20,7 @@ export class Fragments {
 		identify: (item: unknown) => unknown,
 		fragment: (item: unknown) => Fragment,
 	) {
-		Object.defineProperty(this, '$fragments', {
+		Object.defineProperty(this, NAME_FRAGMENTS, {
 			value: true,
 		});
 

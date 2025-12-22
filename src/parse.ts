@@ -1,6 +1,6 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
-import type {FragmentData} from './models';
 import {EXPRESSION_ABYDON_ATTRIBUTE_FULL} from './constants';
+import type {FragmentData} from './models';
 
 function handleExpression(data: FragmentData, prefix: string, expression: unknown): string {
 	if (Array.isArray(expression)) {

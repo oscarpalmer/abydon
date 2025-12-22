@@ -1,6 +1,5 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {computed, isReactive} from '@oscarpalmer/mora';
-import {isBooleanAttribute, setProperty} from '@oscarpalmer/toretto/attribute';
 import {
 	EXPRESSION_ABYDON_ATTRIBUTE_PREFIX,
 	EXPRESSION_ABYDON_CONTENT,
@@ -22,22 +21,24 @@ export function mapAttributes(data: FragmentData, element: HTMLElement | SVGElem
 	const {length} = attributes;
 
 	for (let index = 0; index < length; index += 1) {
-		let {name, value} = attributes[index];
+		const {name, value} = attributes[index];
 
-		name = name.replace(EXPRESSION_ABYDON_ATTRIBUTE_PREFIX, '');
-		value = getValue(data, value) as never;
+		const actualName = name.replace(EXPRESSION_ABYDON_ATTRIBUTE_PREFIX, '');
+		const actualValue = getValue(data, value) as never;
+
+		if (actualName !== name) {
+			element.removeAttribute(name);
+		}
 
 		switch (true) {
-			case EXPRESSION_EVENT_PREFIX.test(name):
-				mapEvent(element, name, value);
+			case EXPRESSION_EVENT_PREFIX.test(actualName):
+				mapEvent(element, actualName, actualValue);
 				break;
 
-			case EXPRESSION_PERIOD.test(name) || typeof value === 'function' || isReactive(value):
-				mapValue(data, element, name, value);
-				break;
-
-			case isBooleanAttribute(name):
-				setProperty(element, name, true);
+			case EXPRESSION_PERIOD.test(actualName):
+			case typeof actualValue === 'function':
+			case isReactive(actualValue):
+				mapValue(data, element, actualName, actualValue);
 				break;
 
 			default:

@@ -1,4 +1,4 @@
-import type {PlainObject} from '@oscarpalmer/atoms';
+import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {NAME_FRAGMENT, NAME_FRAGMENTS} from '../constants';
 import type {Fragment} from '../fragment';
 import type {Fragments} from '../fragments';

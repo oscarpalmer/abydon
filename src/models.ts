@@ -7,10 +7,10 @@ export type FragmentConfiguration = {
 	 */
 	cache?: boolean;
 	/**
-	 * Set an identifier for the fragment
+	 * Identifier for the fragment
 	 *
-	 * _An identifier can be used to uniquely identify a fragment,
-	 * which helps prevent re-rendering in certain scenarios._
+	 * _(An identifier can be used to uniquely identify a fragment,
+	 * which helps prevent re-rendering in certain scenarios)_
 	 */
 	identifier?: unknown;
 };

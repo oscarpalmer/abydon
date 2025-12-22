@@ -1,7 +1,10 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
-import {getString} from '@oscarpalmer/atoms/string';
 import {isReactive} from '@oscarpalmer/mora';
-import {isBooleanAttribute, setAttribute as setAttr} from '@oscarpalmer/toretto/attribute';
+import {
+	isBooleanAttribute,
+	setAttribute as setAttr,
+	setProperty,
+} from '@oscarpalmer/toretto/attribute';
 import {
 	ATTRIBUTE_CLASS_PREFIX_LENGTH,
 	EXPRESSION_ATTRIBUTE_CLASS,
@@ -10,14 +13,20 @@ import {
 } from '../../constants';
 import type {FragmentData} from '../../models';
 
+function getCallback(element: HTMLElement | SVGElement, name: string) {
+	if (isBooleanAttribute(name) && name in element) {
+		return name === 'checked' ? updateChecked : updateProperty;
+	}
+
+	return name === 'value' ? updateValue : setAttr;
+}
+
 export function setAttribute(
 	data: FragmentData,
 	element: HTMLElement | SVGElement,
 	name: string,
 	value: unknown,
 ): void {
-	element.removeAttribute(name);
-
 	switch (true) {
 		case EXPRESSION_ATTRIBUTE_CLASS.test(name):
 			setClasses(data, element, name, value);
@@ -72,7 +81,7 @@ function setStyle(
 		if (value == null || value === false || (value === true && unit == null)) {
 			element.style.removeProperty(property);
 		} else {
-			element.style.setProperty(property, value === true ? unit : getString(value));
+			element.style.setProperty(property, value === true ? unit : String(value));
 		}
 	}
 
@@ -89,13 +98,7 @@ function setValue(
 	name: string,
 	value: unknown,
 ): void {
-	let callback: (element: HTMLElement | SVGElement, name: string, value: unknown) => void;
-
-	if (isBooleanAttribute(name) && name in element) {
-		callback = name === 'selected' ? updateSelected : updateProperty;
-	} else {
-		callback = setAttr;
-	}
+	const callback = getCallback(element, name);
 
 	if (isReactive(value)) {
 		data.mora.subscribers.add(
@@ -108,17 +111,40 @@ function setValue(
 	}
 }
 
-function updateProperty(element: HTMLElement | SVGElement, name: string, value: unknown): void {
-	(element as unknown as PlainObject)[name] = value === true;
+function updateChecked(element: HTMLElement | SVGElement, name: string, value: unknown): void {
+	updateElement('change', 'checked', element, name, value, value === true);
 }
 
-function updateSelected(element: HTMLElement | SVGElement, name: string, value: unknown): void {
-	const select = element.closest('select') as HTMLSelectElement;
-	const options = [...(select?.options ?? [])];
-
-	if (select != null && options.includes(element as HTMLOptionElement)) {
-		select.dispatchEvent(new Event('change', {bubbles: true}));
+function updateElement(
+	event: string,
+	property: string,
+	element: HTMLElement | SVGElement,
+	name: string,
+	value: unknown,
+	next: unknown,
+): void {
+	if (!(property in element) || (element as unknown as PlainObject)[property] === next) {
+		return;
 	}
 
-	updateProperty(element, name, value);
+	setAttr(element, name, value);
+
+	(element as unknown as PlainObject)[property] = next;
+
+	element.dispatchEvent(new Event(event, {bubbles: true}));
+}
+
+function updateProperty(element: HTMLElement | SVGElement, name: string, value: unknown): void {
+	setProperty(element, name, value === true);
+}
+
+function updateValue(element: HTMLElement | SVGElement, name: string, value: unknown): void {
+	updateElement(
+		element instanceof HTMLSelectElement ? 'change' : 'input',
+		'value',
+		element,
+		name,
+		value,
+		String(value),
+	);
 }

@@ -1,5 +1,14 @@
 export const ATTRIBUTE_CLASS_PREFIX_LENGTH = 6;
 
+export const EVENT_DEFAULTS: Record<string, string> = {
+	A: 'click',
+	BUTTON: 'click',
+	DETAILS: 'toggle',
+	FORM: 'submit',
+	SELECT: 'change',
+	TEXTAREA: 'input',
+};
+
 export const EXPRESSION_ABYDON_ATTRIBUTE_FULL = /(@?\w+)="<!--abydon.(\d+)-->"/g;
 
 export const EXPRESSION_ABYDON_ATTRIBUTE_PREFIX = /^_/;
@@ -11,6 +20,8 @@ export const EXPRESSION_ATTRIBUTE_CLASS = /^class\./;
 export const EXPRESSION_ATTRIBUTE_STYLE_FULL = /^style\.([\w-]+)(?:\.([\w-]+))?$/;
 
 export const EXPRESSION_ATTRIBUTE_STYLE_PREFIX = /^style\./;
+
+export const EXPRESSION_EVENT_CHANGE_TYPES = /^(checkbox|radio)$/;
 
 export const EXPRESSION_EVENT_NAME = /^@([\w-]+)(?::([a-z:]+))?$/i;
 
