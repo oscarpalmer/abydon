@@ -1,56 +1,27 @@
 import {on} from '@oscarpalmer/toretto/event';
-import type {HTMLOrSVGElement, RemovableEventListener} from '@oscarpalmer/toretto/models';
-import {EXPRESSION_EVENT_NAME} from '../constants';
+import {
+	EXPRESSION_EVENT_NAME,
+	EXPRESSION_EVENT_OPTIONS_ACTIVE,
+	EXPRESSION_EVENT_OPTIONS_CAPTURE,
+	EXPRESSION_EVENT_OPTIONS_ONCE,
+} from '../constants';
 
 function getOptions(options: string): AddEventListenerOptions {
 	const parts = options.split(':');
 
 	return {
-		capture: parts.includes('c') || parts.includes('capture'),
-		once: parts.includes('o') || parts.includes('once'),
-		passive: !(parts.includes('a') || parts.includes('active')),
+		capture: parts.some(part => EXPRESSION_EVENT_OPTIONS_CAPTURE.test(part)),
+		once: parts.some(part => EXPRESSION_EVENT_OPTIONS_ONCE.test(part)),
+		passive: !parts.some(part => EXPRESSION_EVENT_OPTIONS_ACTIVE.test(part)),
 	};
 }
 
-export function mapEvent(element: HTMLOrSVGElement, name: string, value: unknown): void {
+export function mapEvent(element: HTMLElement | SVGElement, name: string, value: unknown): void {
 	element.removeAttribute(name);
 
 	const [, type, options] = EXPRESSION_EVENT_NAME.exec(name) ?? [];
 
-	if (typeof value !== 'function' || type == null) {
-		return;
+	if (type != null && typeof value === 'function') {
+		on(element, type, value as EventListener, getOptions(options ?? ''));
 	}
-
-	let listeners = mapped.get(element);
-
-	if (listeners == null) {
-		listeners = [];
-
-		mapped.set(element, listeners);
-	}
-
-	listeners.push(
-		on(element, type, value as EventListener, {
-			...getOptions(options ?? ''),
-		}),
-	);
 }
-
-export function removeEvents(element: HTMLOrSVGElement): void {
-	const listeners = mapped.get(element);
-
-	if (listeners != null) {
-		for (const remove of listeners) {
-			remove();
-		}
-	}
-
-	mapped.delete(element);
-}
-
-//
-
-const mapped = new WeakMap<HTMLOrSVGElement, RemovableEventListener[]>();
-
-// @ts-expect-error debug
-window.mapped = mapped;

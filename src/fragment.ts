@@ -12,7 +12,7 @@ export class Fragment {
 
 	readonly #configuration: Required<FragmentConfiguration> = {
 		identifier: undefined,
-		ignoreCache: false,
+		cache: true,
 	};
 
 	/**
@@ -55,12 +55,12 @@ export class Fragment {
 	configure(configuration: FragmentConfiguration): Fragment {
 		const actual = isPlainObject(configuration) ? configuration : {};
 
-		if (actual.identifier !== undefined) {
+		if ('identifier' in actual) {
 			this.#configuration.identifier = actual.identifier;
 		}
 
-		if (typeof actual.ignoreCache === 'boolean') {
-			this.#configuration.ignoreCache = actual.ignoreCache;
+		if (typeof actual.cache === 'boolean') {
+			this.#configuration.cache = actual.cache;
 		}
 
 		return this;
@@ -77,8 +77,7 @@ export class Fragment {
 			const parsed = parse(data);
 
 			const templated = html(parsed, {
-				ignoreCache: this.#configuration.ignoreCache,
-				sanitizeBooleanAttributes: false,
+				cache: this.#configuration.cache,
 			});
 
 			data.items.splice(

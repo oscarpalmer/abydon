@@ -2,8 +2,17 @@ import type {Reactive, ReactiveArray, Unsubscribe} from '@oscarpalmer/mora';
 import type {Fragment} from './fragment';
 
 export type FragmentConfiguration = {
+	/**
+	 * Should the template be cached? _(defaults to `true`)_
+	 */
+	cache?: boolean;
+	/**
+	 * Set an identifier for the fragment
+	 *
+	 * _An identifier can be used to uniquely identify a fragment,
+	 * which helps prevent re-rendering in certain scenarios._
+	 */
 	identifier?: unknown;
-	ignoreCache?: boolean;
 };
 
 export type FragmentData = {

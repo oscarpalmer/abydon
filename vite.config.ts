@@ -28,6 +28,7 @@ export default defineConfig({
 						'@oscarpalmer/atoms/string',
 						'@oscarpalmer/mora',
 						'@oscarpalmer/toretto/attribute',
+						'@oscarpalmer/toretto/event',
 						'@oscarpalmer/toretto/html',
 						'@oscarpalmer/toretto/is',
 					],

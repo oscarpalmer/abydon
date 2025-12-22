@@ -1,6 +1,5 @@
 import {getString} from '@oscarpalmer/atoms/string';
-import {isChildNode, isHTMLOrSVGElement} from '@oscarpalmer/toretto/is';
-import {removeEvents} from '../node/event';
+import {isChildNode} from '@oscarpalmer/toretto/is';
 import {isFragment} from './index';
 
 export function createNodes(value: unknown): ChildNode[] {
@@ -16,8 +15,6 @@ export function createNodes(value: unknown): ChildNode[] {
 }
 
 export function removeNodes(nodes: ChildNode[]): void {
-	sanitizeNodes(nodes);
-
 	const {length} = nodes;
 
 	for (let index = 0; index < length; index += 1) {
@@ -32,21 +29,5 @@ export function replaceNodes(from: ChildNode[], to: ChildNode[]): void {
 
 	for (let index = 1; index < length; index += 1) {
 		from[index].remove();
-	}
-}
-
-function sanitizeNodes(nodes: ChildNode[]): void {
-	const {length} = nodes;
-
-	for (let index = 0; index < length; index += 1) {
-		const node = nodes[index];
-
-		if (isHTMLOrSVGElement(node)) {
-			removeEvents(node);
-		}
-
-		if (node.hasChildNodes()) {
-			sanitizeNodes([...node.childNodes] as ChildNode[]);
-		}
 	}
 }

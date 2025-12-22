@@ -1,7 +1,7 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
-import {computed, isReactive, Reactive} from '@oscarpalmer/mora';
+import {computed, isReactive, type Reactive} from '@oscarpalmer/mora';
 import {isHTMLOrSVGElement} from '@oscarpalmer/toretto/is';
-import {EXPRESSION_COMMENT_CONTENT} from '../constants';
+import {EXPRESSION_ABYDON_CONTENT} from '../constants';
 import {handleFragments} from '../fragments';
 import {isFragment, isFragments} from '../helpers';
 import {createNodes} from '../helpers/dom';
@@ -10,7 +10,7 @@ import {mapAttributes} from './attribute';
 import {setReactiveValue} from './value';
 
 function mapNode(data: FragmentData, comment: Comment): void {
-	const matches = EXPRESSION_COMMENT_CONTENT.exec(comment.textContent ?? '');
+	const matches = EXPRESSION_ABYDON_CONTENT.exec(comment.textContent ?? '');
 	const value = matches == null ? null : data.values[+matches[1]];
 
 	if (value != null) {

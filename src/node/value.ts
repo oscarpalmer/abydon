@@ -10,8 +10,8 @@ import type {FragmentData, FragmentItem} from '../models';
 //
 
 type Identifiers = {
-	next: unknown[];
-	previous: (unknown | undefined)[];
+	next: Set<unknown>;
+	previous: Set<unknown>;
 };
 
 type BaseItems = {
@@ -33,7 +33,7 @@ function addToArray(
 ): void {
 	let position = nodes[0];
 
-	const before = added && !identifiers.previous.includes(items.templates[0].identifier);
+	const before = added && !identifiers.previous.has(items.templates[0].identifier);
 
 	const next = items.next.flatMap(fragment =>
 		fragment.get().flatMap(node => ({
@@ -47,7 +47,7 @@ function addToArray(
 	for (let index = 0; index < length; index += 1) {
 		const node = next[index];
 
-		if (!(added && identifiers.previous.includes(node.identifier))) {
+		if (!(added && identifiers.previous.has(node.identifier))) {
 			if (index === 0 && before) {
 				position.before(node.value);
 			} else {
@@ -76,7 +76,7 @@ function handleArray(
 	}
 
 	const toRemove =
-		items.fragments?.filter(fragment => !identifiers.next.includes(fragment.identifier)) ?? [];
+		items.fragments?.filter(fragment => !identifiers.next.has(fragment.identifier)) ?? [];
 
 	const {length} = toRemove;
 
@@ -149,8 +149,8 @@ function setArray(
 
 	return handleArray(
 		{
-			next,
-			previous,
+			next: new Set(next),
+			previous: new Set(previous),
 		},
 		{
 			templates,

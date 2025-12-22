@@ -1,5 +1,6 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
 import type {FragmentData} from './models';
+import {EXPRESSION_ABYDON_ATTRIBUTE_FULL} from './constants';
 
 function handleExpression(data: FragmentData, prefix: string, expression: unknown): string {
 	if (Array.isArray(expression)) {
@@ -15,9 +16,7 @@ function handleExpression(data: FragmentData, prefix: string, expression: unknow
 	}
 
 	if (typeof expression === 'function' || (typeof expression === 'object' && expression != null)) {
-		const index = data.values.push(expression) - 1;
-
-		return `${prefix}<!--abydon.${index}-->`;
+		return transformExpression(prefix, data.values.push(expression) - 1);
 	}
 
 	return isNullableOrWhitespace(expression) ? prefix : `${prefix}${expression}`;
@@ -36,8 +35,18 @@ export function parse(data: FragmentData): string {
 		data.template += handleExpression(data, data.strings[index], data.expressions[index]);
 	}
 
+	data.template = data.template.replaceAll(EXPRESSION_ABYDON_ATTRIBUTE_FULL, transformAttribute);
+
 	data.expressions = [];
 	data.strings = [] as never;
 
 	return data.template;
+}
+
+function transformAttribute(_: string, name: string, index: string): string {
+	return `_${name}="@abydon.${index}@"`;
+}
+
+function transformExpression(prefix: string, index: number): string {
+	return `${prefix}<!--abydon.${index}-->`;
 }

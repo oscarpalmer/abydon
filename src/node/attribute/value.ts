@@ -2,7 +2,6 @@ import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {getString} from '@oscarpalmer/atoms/string';
 import {isReactive} from '@oscarpalmer/mora';
 import {isBooleanAttribute, setAttribute as setAttr} from '@oscarpalmer/toretto/attribute';
-import type {HTMLOrSVGElement} from '@oscarpalmer/toretto/models';
 import {
 	ATTRIBUTE_CLASS_PREFIX_LENGTH,
 	EXPRESSION_ATTRIBUTE_CLASS,
@@ -13,7 +12,7 @@ import type {FragmentData} from '../../models';
 
 export function setAttribute(
 	data: FragmentData,
-	element: HTMLOrSVGElement,
+	element: HTMLElement | SVGElement,
 	name: string,
 	value: unknown,
 ): void {
@@ -36,7 +35,7 @@ export function setAttribute(
 
 function setClasses(
 	data: FragmentData,
-	element: HTMLOrSVGElement,
+	element: HTMLElement | SVGElement,
 	name: string,
 	value: unknown,
 ): void {
@@ -59,7 +58,7 @@ function setClasses(
 
 function setStyle(
 	data: FragmentData,
-	element: HTMLOrSVGElement,
+	element: HTMLElement | SVGElement,
 	name: string,
 	value: unknown,
 ): void {
@@ -86,11 +85,11 @@ function setStyle(
 
 function setValue(
 	data: FragmentData,
-	element: HTMLOrSVGElement,
+	element: HTMLElement | SVGElement,
 	name: string,
 	value: unknown,
 ): void {
-	let callback: (element: HTMLOrSVGElement, name: string, value: unknown) => void;
+	let callback: (element: HTMLElement | SVGElement, name: string, value: unknown) => void;
 
 	if (isBooleanAttribute(name) && name in element) {
 		callback = name === 'selected' ? updateSelected : updateProperty;
@@ -109,11 +108,11 @@ function setValue(
 	}
 }
 
-function updateProperty(element: HTMLOrSVGElement, name: string, value: unknown): void {
+function updateProperty(element: HTMLElement | SVGElement, name: string, value: unknown): void {
 	(element as unknown as PlainObject)[name] = value === true;
 }
 
-function updateSelected(element: HTMLOrSVGElement, name: string, value: unknown): void {
+function updateSelected(element: HTMLElement | SVGElement, name: string, value: unknown): void {
 	const select = element.closest('select') as HTMLSelectElement;
 	const options = [...(select?.options ?? [])];
 

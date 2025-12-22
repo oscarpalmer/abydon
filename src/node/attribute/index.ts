@@ -1,38 +1,43 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {computed, isReactive} from '@oscarpalmer/mora';
 import {isBooleanAttribute, setProperty} from '@oscarpalmer/toretto/attribute';
-import type {HTMLOrSVGElement} from '@oscarpalmer/toretto/models';
-import {EXPRESSION_COMMENT_FULL} from '../../constants';
+import {
+	EXPRESSION_ABYDON_ATTRIBUTE_PREFIX,
+	EXPRESSION_ABYDON_CONTENT,
+	EXPRESSION_EVENT_PREFIX,
+	EXPRESSION_PERIOD,
+} from '../../constants';
 import type {FragmentData} from '../../models';
 import {mapEvent} from '../event';
 import {setAttribute} from './value';
 
 function getValue(data: FragmentData, original: string): unknown {
-	const matches = EXPRESSION_COMMENT_FULL.exec(original ?? '');
+	const matches = EXPRESSION_ABYDON_CONTENT.exec(original ?? '');
 
 	return matches == null ? original : data.values[+matches[1]];
 }
 
-export function mapAttributes(data: FragmentData, element: HTMLOrSVGElement): void {
+export function mapAttributes(data: FragmentData, element: HTMLElement | SVGElement): void {
 	const attributes = [...element.attributes];
 	const {length} = attributes;
 
 	for (let index = 0; index < length; index += 1) {
-		const {name, value} = attributes[index];
+		let {name, value} = attributes[index];
 
-		const actual = getValue(data, value);
+		name = name.replace(EXPRESSION_ABYDON_ATTRIBUTE_PREFIX, '');
+		value = getValue(data, value) as never;
 
 		switch (true) {
-			case name.startsWith('@'):
-				mapEvent(element, name, actual);
+			case EXPRESSION_EVENT_PREFIX.test(name):
+				mapEvent(element, name, value);
 				break;
 
-			case name.includes('.') || typeof actual === 'function' || isReactive(actual):
-				mapValue(data, element, name, actual);
+			case EXPRESSION_PERIOD.test(name) || typeof value === 'function' || isReactive(value):
+				mapValue(data, element, name, value);
 				break;
 
 			case isBooleanAttribute(name):
-				setProperty(element, name, value);
+				setProperty(element, name, true);
 				break;
 
 			default:
@@ -43,7 +48,7 @@ export function mapAttributes(data: FragmentData, element: HTMLOrSVGElement): vo
 
 function mapValue(
 	data: FragmentData,
-	element: HTMLOrSVGElement,
+	element: HTMLElement | SVGElement,
 	name: string,
 	value: unknown,
 ): void {
@@ -56,7 +61,7 @@ function mapValue(
 
 function setComputedAttribute(
 	data: FragmentData,
-	element: HTMLOrSVGElement,
+	element: HTMLElement | SVGElement,
 	name: string,
 	callback: GenericCallback,
 ): void {
