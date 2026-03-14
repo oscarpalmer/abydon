@@ -1,6 +1,6 @@
 import {isPlainObject} from '@oscarpalmer/atoms/is';
 import {html} from '@oscarpalmer/toretto/html';
-import {NAME_FRAGMENT} from './constants';
+import {NAME_FRAGMENT, PROPERTY_IDENTIFIER} from './constants';
 import {handleFragments} from './fragments';
 import {isFragments} from './helpers';
 import {removeNodes} from './helpers/dom';
@@ -56,7 +56,7 @@ export class Fragment {
 	configure(configuration: FragmentConfiguration): Fragment {
 		const actual = isPlainObject(configuration) ? configuration : {};
 
-		if ('identifier' in actual) {
+		if (PROPERTY_IDENTIFIER in actual) {
 			this.#configuration.identifier = actual.identifier;
 		}
 

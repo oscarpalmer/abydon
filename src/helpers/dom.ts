@@ -14,6 +14,16 @@ export function createNodes(value: unknown): ChildNode[] {
 	return [new Text(getString(value))];
 }
 
+export function isInputElement(
+	node: Node,
+): node is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement {
+	return (
+		node instanceof HTMLInputElement ||
+		node instanceof HTMLSelectElement ||
+		node instanceof HTMLTextAreaElement
+	);
+}
+
 export function removeNodes(nodes: ChildNode[]): void {
 	const {length} = nodes;
 

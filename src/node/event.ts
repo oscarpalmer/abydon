@@ -1,6 +1,11 @@
 import {on} from '@oscarpalmer/toretto/event';
 import {
+	EVENT_CHANGE,
 	EVENT_DEFAULTS,
+	EVENT_INPUT,
+	EVENT_ON_VALUE,
+	EVENT_OPTIONS_DELIMITER,
+	EVENT_SUBMIT,
 	EXPRESSION_EVENT_CHANGE_TYPES,
 	EXPRESSION_EVENT_NAME,
 	EXPRESSION_EVENT_OPTIONS_ACTIVE,
@@ -9,7 +14,7 @@ import {
 } from '../constants';
 
 function getOptions(options: string): AddEventListenerOptions {
-	const parts = options.split(':');
+	const parts = options.split(EVENT_OPTIONS_DELIMITER);
 
 	return {
 		capture: parts.some(part => EXPRESSION_EVENT_OPTIONS_CAPTURE.test(part)),
@@ -19,16 +24,16 @@ function getOptions(options: string): AddEventListenerOptions {
 }
 
 function getType(element: HTMLElement | SVGElement, type: string): string {
-	if (type !== 'on') {
+	if (type !== EVENT_ON_VALUE) {
 		return type;
 	}
 
 	if (element instanceof HTMLInputElement) {
 		if (EXPRESSION_EVENT_CHANGE_TYPES.test(element.type)) {
-			return 'change';
+			return EVENT_CHANGE;
 		}
 
-		return element.type === 'submit' ? 'submit' : 'input';
+		return element.type === EVENT_SUBMIT ? EVENT_SUBMIT : EVENT_INPUT;
 	}
 
 	return EVENT_DEFAULTS[element.tagName] ?? type;

@@ -1,6 +1,12 @@
 import {getString} from '@oscarpalmer/atoms/string';
 import {array, type ReactiveArray} from '@oscarpalmer/mora';
-import {NAME_FRAGMENTS} from './constants';
+import {
+	ERROR_FRAGMENT,
+	ERROR_IDENTIFIER_DUPLICATE,
+	ERROR_IDENTIFIER_TYPE,
+	NAME_FRAGMENTS,
+	TEMPLATE_ITEM,
+} from './constants';
 import type {Fragment} from './fragment';
 import {isFragment, isFragments} from './helpers';
 import type {FragmentsState} from './models';
@@ -58,13 +64,13 @@ function handleItems(state: FragmentsState, items: unknown[]): void {
 		const identifier = state.identify(item);
 
 		if (identifier == null) {
-			throw new Error('Identifier cannot be null or undefined');
+			throw new TypeError(ERROR_IDENTIFIER_TYPE);
 		}
 
 		const key = getString(identifier);
 
 		if (keys.has(key)) {
-			throw new Error(`Duplicate identifier found: "${key}"`);
+			throw new Error(ERROR_IDENTIFIER_DUPLICATE.replace(TEMPLATE_ITEM, key));
 		}
 
 		let instance = state.instances[key];
@@ -73,7 +79,7 @@ function handleItems(state: FragmentsState, items: unknown[]): void {
 			instance = state.fragment(item);
 
 			if (!isFragment(instance)) {
-				throw new Error('Fragment function must return a Fragment instance');
+				throw new Error(ERROR_FRAGMENT);
 			}
 		}
 

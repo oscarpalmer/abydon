@@ -1,6 +1,6 @@
 {
 	"name": "@oscarpalmer/abydon",
-	"version": "0.17.0",
+	"version": "0.18.0",
 	"keywords": [
 		"components",
 		"dom",
@@ -39,8 +39,7 @@
 		"tsdown:build": "npx tsdown -c ./tsdown.config.ts",
 		"tsdown:watch": "npx tsdown -c ./tsdown.config.ts --watch",
 		"test": "npx vp test run --coverage",
-		"test:leak": "npx vp test run --detect-async-leaks --coverage",
-		"watch": "npx vite build --watch"
+		"test:leak": "npx vp test run --detect-async-leaks --coverage"
 	},
 	"dependencies": {
 		"@oscarpalmer/atoms": "^0.165",

@@ -1,21 +1,30 @@
 import type {PlainObject} from '@oscarpalmer/atoms/models';
-import {NAME_FRAGMENT, NAME_FRAGMENTS} from '../constants';
+import {
+	ARRAY_COMPARISON_ADDED,
+	ARRAY_COMPARISON_DISSIMILAR,
+	ARRAY_COMPARISON_REMOVED,
+	NAME_FRAGMENT,
+	NAME_FRAGMENTS,
+} from '../constants';
 import type {Fragment} from '../fragment';
 import type {Fragments} from '../fragments';
 
 export function compareArrays(
 	first: unknown[],
 	second: unknown[],
-): 'added' | 'dissimilar' | 'removed' {
+):
+	| typeof ARRAY_COMPARISON_ADDED
+	| typeof ARRAY_COMPARISON_DISSIMILAR
+	| typeof ARRAY_COMPARISON_REMOVED {
 	const firstIsLarger = first.length > second.length;
 	const from = firstIsLarger ? first : second;
 	const to = firstIsLarger ? second : first;
 
 	if (!from.filter(key => to.includes(key)).every((key, index) => to[index] === key)) {
-		return COMPARISON_DISSIMILAR;
+		return ARRAY_COMPARISON_DISSIMILAR;
 	}
 
-	return firstIsLarger ? COMPARISON_REMOVED : COMPARISON_ADDED;
+	return firstIsLarger ? ARRAY_COMPARISON_REMOVED : ARRAY_COMPARISON_ADDED;
 }
 
 export function isFragment(value: unknown): value is Fragment {
@@ -34,9 +43,3 @@ function isNamed(value: unknown, name: string): boolean {
 		(value as PlainObject)[name] === true
 	);
 }
-
-const COMPARISON_ADDED = 'added';
-
-const COMPARISON_DISSIMILAR = 'dissimilar';
-
-const COMPARISON_REMOVED = 'removed';

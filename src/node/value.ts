@@ -2,6 +2,7 @@ import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
 import {getString} from '@oscarpalmer/atoms/string';
 import type {Reactive} from '@oscarpalmer/mora';
 import {isChildNode} from '@oscarpalmer/toretto/is';
+import {ARRAY_COMPARISON_ADDED, ARRAY_COMPARISON_REMOVED} from '../constants';
 import type {Fragment} from '../fragment';
 import {compareArrays, isFragment} from '../helpers';
 import {createNodes, replaceNodes} from '../helpers/dom';
@@ -71,8 +72,8 @@ function handleArray(
 
 	const comparison = compareArrays(items.fragments ?? [], items.templates);
 
-	if (comparison !== 'removed') {
-		addToArray(identifiers, {...items, next}, nodes, comparison === 'added');
+	if (comparison !== ARRAY_COMPARISON_REMOVED) {
+		addToArray(identifiers, {...items, next}, nodes, comparison === ARRAY_COMPARISON_ADDED);
 	}
 
 	const toRemove =

@@ -1,11 +1,15 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
-import {computed, isReactive} from '@oscarpalmer/mora';
+import {parse} from '@oscarpalmer/atoms/string';
+import {computed, isReactive, isSignal} from '@oscarpalmer/mora';
 import {
+	EVENT_ON_PREFIXED,
 	EXPRESSION_ABYDON_ATTRIBUTE_PREFIX,
 	EXPRESSION_ABYDON_CONTENT,
 	EXPRESSION_EVENT_PREFIX,
 	EXPRESSION_PERIOD,
+	PROPERTY_VALUE,
 } from '../../constants';
+import {isInputElement} from '../../helpers/dom';
 import type {FragmentData} from '../../models';
 import {mapEvent} from '../event';
 import {setAttribute} from './value';
@@ -57,6 +61,12 @@ function mapValue(
 		setComputedAttribute(data, element, name, value as GenericCallback);
 	} else {
 		setAttribute(data, element, name, value);
+	}
+
+	if (name === PROPERTY_VALUE && isInputElement(element) && isSignal(value)) {
+		mapEvent(element, EVENT_ON_PREFIXED, () => {
+			value.set(parse(element.value) ?? element.value);
+		});
 	}
 }
 

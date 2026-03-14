@@ -6,18 +6,23 @@ import {
 } from '@oscarpalmer/toretto/attribute';
 import {
 	ATTRIBUTE_CLASS_PREFIX_LENGTH,
+	ATTRIBUTE_NAME_DELIMITER,
+	EVENT_CHANGE,
+	EVENT_INPUT,
 	EXPRESSION_ATTRIBUTE_CLASS,
 	EXPRESSION_ATTRIBUTE_STYLE_FULL,
 	EXPRESSION_ATTRIBUTE_STYLE_PREFIX,
+	PROPERTY_CHECKED,
+	PROPERTY_VALUE,
 } from '../../constants';
 import type {FragmentData} from '../../models';
 
 function getCallback(element: HTMLElement | SVGElement, name: string) {
 	if (isBooleanAttribute(name) && name in element) {
-		return name === 'checked' ? updateChecked : updateProperty;
+		return name === PROPERTY_CHECKED ? updateChecked : updateProperty;
 	}
 
-	return name === 'value' ? updateValue : setTorettoAttribute;
+	return name === PROPERTY_VALUE ? updateValue : setTorettoAttribute;
 }
 
 export function setAttribute(
@@ -55,7 +60,7 @@ function setClasses(
 		}
 	}
 
-	const classes = name.slice(ATTRIBUTE_CLASS_PREFIX_LENGTH).split('.');
+	const classes = name.slice(ATTRIBUTE_CLASS_PREFIX_LENGTH).split(ATTRIBUTE_NAME_DELIMITER);
 
 	if (isReactive(value)) {
 		data.mora.subscribers.add(value.subscribe(update));
@@ -111,7 +116,7 @@ function setValue(
 }
 
 function updateChecked(element: HTMLElement | SVGElement, name: string, value: unknown): void {
-	updateElement('change', 'checked', element, name, value, value === true);
+	updateElement(EVENT_CHANGE, PROPERTY_CHECKED, element, name, value, value === true);
 }
 
 function updateElement(
@@ -143,8 +148,8 @@ function updateProperty(element: HTMLElement | SVGElement, name: string, value: 
 
 function updateValue(element: HTMLElement | SVGElement, name: string, value: unknown): void {
 	updateElement(
-		element instanceof HTMLSelectElement ? 'change' : 'input',
-		'value',
+		element instanceof HTMLSelectElement ? EVENT_CHANGE : EVENT_INPUT,
+		PROPERTY_VALUE,
 		element,
 		name,
 		value,
