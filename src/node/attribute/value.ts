@@ -2,8 +2,7 @@ import type {PlainObject} from '@oscarpalmer/atoms/models';
 import {isReactive} from '@oscarpalmer/mora';
 import {
 	isBooleanAttribute,
-	setAttribute as setAttr,
-	setProperty,
+	setAttribute as setTorettoAttribute,
 } from '@oscarpalmer/toretto/attribute';
 import {
 	ATTRIBUTE_CLASS_PREFIX_LENGTH,
@@ -18,7 +17,7 @@ function getCallback(element: HTMLElement | SVGElement, name: string) {
 		return name === 'checked' ? updateChecked : updateProperty;
 	}
 
-	return name === 'value' ? updateValue : setAttr;
+	return name === 'value' ? updateValue : setTorettoAttribute;
 }
 
 export function setAttribute(
@@ -127,7 +126,11 @@ function updateElement(
 		return;
 	}
 
-	setAttr(element, name, value);
+	setTorettoAttribute(element, name, value);
+
+	if ((element as unknown as PlainObject)[property] === next) {
+		return;
+	}
 
 	(element as unknown as PlainObject)[property] = next;
 
@@ -135,7 +138,7 @@ function updateElement(
 }
 
 function updateProperty(element: HTMLElement | SVGElement, name: string, value: unknown): void {
-	setProperty(element, name, value === true);
+	setTorettoAttribute(element, name, value === true);
 }
 
 function updateValue(element: HTMLElement | SVGElement, name: string, value: unknown): void {
