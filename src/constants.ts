@@ -61,6 +61,10 @@ export const EXPRESSION_EVENT_PREFIX = /^@/;
 
 export const EXPRESSION_PERIOD = /\./;
 
+export const EXPRESSION_TEXTAREA_VALUE = /<!--abydon\.(\d+)-->/;
+
+export const INPUT_TYPE_CHECKBOX = 'checkbox';
+
 export const NAME_FRAGMENT = '$fragment';
 
 export const NAME_FRAGMENTS = '$fragments';

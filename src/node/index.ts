@@ -1,13 +1,21 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
-import {computed, isReactive, type Reactive} from '@oscarpalmer/mora';
+import {
+	computed,
+	isComputed,
+	isReactive,
+	isSignal,
+	type Computed,
+	type Reactive,
+} from '@oscarpalmer/mora';
 import {isHTMLOrSVGElement} from '@oscarpalmer/toretto/is';
-import {EXPRESSION_ABYDON_CONTENT} from '../constants';
+import {EXPRESSION_ABYDON_CONTENT, EXPRESSION_TEXTAREA_VALUE} from '../constants';
 import {handleFragments} from '../fragments';
 import {isFragment, isFragments} from '../helpers';
 import {createNodes} from '../helpers/dom';
 import type {FragmentData} from '../models';
 import {mapAttributes} from './attribute';
 import {setReactiveValue} from './value';
+import {mapEvent} from './event';
 
 function mapNode(data: FragmentData, comment: Comment): void {
 	const matches = EXPRESSION_ABYDON_CONTENT.exec(comment.textContent ?? '');
@@ -30,6 +38,10 @@ export function mapNodes(data: FragmentData, nodes: ChildNode[]): void {
 			continue;
 		}
 
+		if (node instanceof HTMLTextAreaElement) {
+			mapTextarea(data, node);
+		}
+
 		if (isHTMLOrSVGElement(node)) {
 			mapAttributes(data, node);
 		}
@@ -37,6 +49,46 @@ export function mapNodes(data: FragmentData, nodes: ChildNode[]): void {
 		if (node.hasChildNodes()) {
 			mapNodes(data, [...node.childNodes] as ChildNode[]);
 		}
+	}
+}
+
+function mapTextarea(data: FragmentData, element: HTMLTextAreaElement): void {
+	const [, index] = EXPRESSION_TEXTAREA_VALUE.exec(element.value) ?? [];
+
+	if (index == null) {
+		return;
+	}
+
+	element.value = '';
+
+	const value = data.values[Number.parseInt(index, 10)];
+
+	if (isSignal(value)) {
+		element.value = String(value.peek());
+
+		mapEvent(element, '@on', () => {
+			value.set(element.value);
+		});
+
+		return;
+	}
+
+	let reactive: Computed<unknown> | undefined;
+
+	if (typeof value === 'function') {
+		reactive = computed(value as GenericCallback);
+	} else if (isComputed(value)) {
+		reactive = value;
+	}
+
+	if (reactive == null) {
+		element.value = String(value);
+	} else {
+		data.mora.subscribers.add(
+			reactive.subscribe(value => {
+				element.value = String(value);
+			}),
+		);
 	}
 }
 

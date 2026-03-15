@@ -7,6 +7,8 @@ import {
 	EXPRESSION_ABYDON_CONTENT,
 	EXPRESSION_EVENT_PREFIX,
 	EXPRESSION_PERIOD,
+	INPUT_TYPE_CHECKBOX,
+	PROPERTY_CHECKED,
 	PROPERTY_VALUE,
 } from '../../constants';
 import {isInputElement} from '../../helpers/dom';
@@ -63,9 +65,23 @@ function mapValue(
 		setAttribute(data, element, name, value);
 	}
 
-	if (name === PROPERTY_VALUE && isInputElement(element) && isSignal(value)) {
+	if (!isInputElement(element) || !isSignal(value)) {
+		return;
+	}
+
+	let property: string | undefined;
+
+	if (name === PROPERTY_CHECKED && element.type === INPUT_TYPE_CHECKBOX) {
+		property = PROPERTY_CHECKED;
+	} else if (name === PROPERTY_VALUE) {
+		property = PROPERTY_VALUE;
+	}
+
+	if (property != null) {
 		mapEvent(element, EVENT_ON_PREFIXED, () => {
-			value.set(parse(element.value) ?? element.value);
+			const next = element[property as keyof typeof element];
+
+			value.set(parse(String(next)) ?? next);
 		});
 	}
 }
