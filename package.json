@@ -1,6 +1,6 @@
 {
 	"name": "@oscarpalmer/abydon",
-	"version": "0.20.0",
+	"version": "0.21.0",
 	"keywords": [
 		"components",
 		"dom",
@@ -42,15 +42,15 @@
 		"test:leak": "npx vp test run --detect-async-leaks --coverage"
 	},
 	"dependencies": {
-		"@oscarpalmer/atoms": "^0.165",
-		"@oscarpalmer/mora": "^0.27",
-		"@oscarpalmer/toretto": "^0.41"
+		"@oscarpalmer/atoms": "^0.183",
+		"@oscarpalmer/mora": "^0.28",
+		"@oscarpalmer/toretto": "^0.42"
 	},
 	"devDependencies": {
-		"@oscarpalmer/oui": "^0.19",
-		"@types/node": "^25.5",
+		"@oscarpalmer/oui": "^0.20",
+		"@types/node": "^25.6",
 		"@vitest/coverage-istanbul": "^4.1",
-		"jsdom": "^28.1",
+		"jsdom": "^29",
 		"tsdown": "^0.21",
 		"typescript": "^5.9",
 		"vite": "npm:@voidzero-dev/vite-plus-core@latest",

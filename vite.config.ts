@@ -8,7 +8,7 @@ export default defineConfig({
 		clean: false,
 		dts: true,
 		entry: ['./src/**/*.ts'],
-		unbundle: false,
+		unbundle: true,
 	},
 	test: {
 		coverage: {
