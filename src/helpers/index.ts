@@ -27,10 +27,20 @@ export function compareArrays(
 	return firstIsLarger ? ARRAY_COMPARISON_REMOVED : ARRAY_COMPARISON_ADDED;
 }
 
+/**
+ * Is the value a Fragment?
+ * @param value Value to check
+ * @returns `true` if the value is a Fragment, otherwise `false`
+ */
 export function isFragment(value: unknown): value is Fragment {
 	return isNamed(value, NAME_FRAGMENT);
 }
 
+/**
+ * Is the value a Fragments?
+ * @param value Value to check
+ * @returns `true` if the value is a Fragments, otherwise `false`
+ */
 export function isFragments(value: unknown): value is Fragments {
 	return isNamed(value, NAME_FRAGMENTS);
 }

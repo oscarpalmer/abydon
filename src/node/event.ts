@@ -1,12 +1,12 @@
 import {on} from '@oscarpalmer/toretto/event';
 import {
+	CHANGE_INPUTS,
 	EVENT_CHANGE,
 	EVENT_DEFAULTS,
 	EVENT_INPUT,
 	EVENT_ON_VALUE,
 	EVENT_OPTIONS_DELIMITER,
 	EVENT_SUBMIT,
-	EXPRESSION_EVENT_CHANGE_TYPES,
 	EXPRESSION_EVENT_NAME,
 	EXPRESSION_EVENT_OPTIONS_ACTIVE,
 	EXPRESSION_EVENT_OPTIONS_CAPTURE,
@@ -29,7 +29,7 @@ function getType(element: HTMLElement | SVGElement, type: string): string {
 	}
 
 	if (element instanceof HTMLInputElement) {
-		if (EXPRESSION_EVENT_CHANGE_TYPES.test(element.type)) {
+		if (CHANGE_INPUTS.has(element.type)) {
 			return EVENT_CHANGE;
 		}
 

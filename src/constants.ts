@@ -8,6 +8,8 @@ export const ATTRIBUTE_CLASS_PREFIX_LENGTH = 6;
 
 export const ATTRIBUTE_NAME_DELIMITER = '.';
 
+export const CHANGE_INPUTS = new Set(['checkbox', 'radio']);
+
 export const ERROR_FRAGMENT = 'Fragment function must return a Fragment instance';
 
 export const ERROR_IDENTIFIER_DUPLICATE = "Duplicate identifier found: '<id>'";
@@ -29,17 +31,15 @@ export const EVENT_DEFAULTS: Record<string, string> = {
 	TEXTAREA: EVENT_INPUT,
 };
 
-export const EVENT_ON_PREFIXED = '@on';
-
 export const EVENT_ON_VALUE = 'on';
 
 export const EVENT_OPTIONS_DELIMITER = ':';
 
-export const EXPRESSION_ABYDON_ATTRIBUTE_FULL = /(@?[\w-]+)="<!--abydon.(\d+)-->"/g;
+export const EXPRESSION_ABYDON_ATTRIBUTE_FULL = /(@?[\w-.]+)="<!--abydon.(\d+)-->"/g;
 
-export const EXPRESSION_ABYDON_ATTRIBUTE_PREFIX = /^_/;
+export const EXPRESSION_ABYDON_ATTRIBUTE_PREFIX = /^abydon-/;
 
-export const EXPRESSION_ABYDON_CONTENT = /^@?abydon\.(\d+)@?$/;
+export const EXPRESSION_ABYDON_CONTENT = /^abydon\.(\d+)$/;
 
 export const EXPRESSION_ATTRIBUTE_CLASS = /^class\./;
 
@@ -47,9 +47,7 @@ export const EXPRESSION_ATTRIBUTE_STYLE_FULL = /^style\.([\w-]+)(?:\.([\w-]+))?$
 
 export const EXPRESSION_ATTRIBUTE_STYLE_PREFIX = /^style\./;
 
-export const EXPRESSION_EVENT_CHANGE_TYPES = /^(checkbox|radio)$/;
-
-export const EXPRESSION_EVENT_NAME = /^@([\w-]+)(?::([a-z:]+))?$/i;
+export const EXPRESSION_EVENT_NAME = /^@?([\w-]+)(?::([a-z:]+))?$/i;
 
 export const EXPRESSION_EVENT_OPTIONS_ACTIVE = /^a(ctive)$/i;
 

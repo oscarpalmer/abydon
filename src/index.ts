@@ -4,7 +4,7 @@ import {Fragment} from './fragment';
 import {Fragments} from './fragments';
 
 /**
- * Create Fragments from a reactive array
+ * Create a Fragments from a reactive array
  * @param array Reactive array
  * @param identify Function to identify item
  * @param fragment Function to create fragment from item
@@ -19,7 +19,7 @@ export function fragments<Item>(
 }
 
 /**
- * Create Fragment from a template
+ * Create a Fragment from a template
  * @returns Fragment
  */
 export function html(template: TemplateStringsArray, ...values: unknown[]): Fragment {
@@ -29,3 +29,4 @@ export function html(template: TemplateStringsArray, ...values: unknown[]): Frag
 export * from '@oscarpalmer/mora';
 export type {Fragment} from './fragment';
 export type {Fragments} from './fragments';
+export {isFragment, isFragments} from './helpers';

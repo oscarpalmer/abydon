@@ -16,6 +16,7 @@ import {
 	PROPERTY_VALUE,
 } from '../../constants';
 import type {FragmentData} from '../../models';
+import { camelCase } from '@oscarpalmer/atoms/string/case';
 
 function getCallback(element: HTMLElement | SVGElement, name: string) {
 	if (isBooleanAttribute(name) && name in element) {
@@ -75,17 +76,19 @@ function setStyle(
 	name: string,
 	value: unknown,
 ): void {
-	const [, property, unit] = EXPRESSION_ATTRIBUTE_STYLE_FULL.exec(name) ?? [];
+	let [, property, unit] = EXPRESSION_ATTRIBUTE_STYLE_FULL.exec(name) ?? [];
 
 	if (property == null) {
 		return;
 	}
 
+	property = camelCase(property);
+
 	function update(value: unknown): void {
 		if (value == null || value === false || (value === true && unit == null)) {
-			element.style.removeProperty(property);
+			element.style[property] = null;
 		} else {
-			element.style.setProperty(property, value === true ? unit : String(value));
+			element.style[property] = value === true ? unit : `${value}${unit ?? ''}`;
 		}
 	}
 

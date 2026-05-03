@@ -44,7 +44,7 @@ export function parse(data: FragmentData): string {
 }
 
 function transformAttribute(_: string, name: string, index: string): string {
-	return `_${name}="@abydon.${index}@"`;
+	return `abydon-${name}="abydon.${index}"`;
 }
 
 function transformExpression(prefix: string, index: number): string {

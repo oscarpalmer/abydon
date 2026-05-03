@@ -8,14 +8,14 @@ import {
 	type Reactive,
 } from '@oscarpalmer/mora';
 import {isHTMLOrSVGElement} from '@oscarpalmer/toretto/is';
-import {EXPRESSION_ABYDON_CONTENT, EXPRESSION_TEXTAREA_VALUE} from '../constants';
+import {EVENT_ON_VALUE, EXPRESSION_ABYDON_CONTENT, EXPRESSION_TEXTAREA_VALUE} from '../constants';
 import {handleFragments} from '../fragments';
 import {isFragment, isFragments} from '../helpers';
 import {createNodes} from '../helpers/dom';
 import type {FragmentData} from '../models';
 import {mapAttributes} from './attribute';
-import {setReactiveValue} from './value';
 import {mapEvent} from './event';
+import {setReactiveValue} from './value';
 
 function mapNode(data: FragmentData, comment: Comment): void {
 	const matches = EXPRESSION_ABYDON_CONTENT.exec(comment.textContent ?? '');
@@ -66,9 +66,15 @@ function mapTextarea(data: FragmentData, element: HTMLTextAreaElement): void {
 	if (isSignal(value)) {
 		element.value = String(value.peek());
 
-		mapEvent(element, '@on', () => {
+		mapEvent(element, EVENT_ON_VALUE, () => {
 			value.set(element.value);
 		});
+
+		data.mora.subscribers.add(
+			value.subscribe(value => {
+				element.value = String(value);
+			}),
+		);
 
 		return;
 	}

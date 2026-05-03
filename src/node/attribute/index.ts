@@ -2,7 +2,7 @@ import type {GenericCallback} from '@oscarpalmer/atoms/models';
 import {parse} from '@oscarpalmer/atoms/string';
 import {computed, isReactive, isSignal} from '@oscarpalmer/mora';
 import {
-	EVENT_ON_PREFIXED,
+	EVENT_ON_VALUE,
 	EXPRESSION_ABYDON_ATTRIBUTE_PREFIX,
 	EXPRESSION_ABYDON_CONTENT,
 	EXPRESSION_EVENT_PREFIX,
@@ -78,7 +78,7 @@ function mapValue(
 	}
 
 	if (property != null) {
-		mapEvent(element, EVENT_ON_PREFIXED, () => {
+		mapEvent(element, EVENT_ON_VALUE, () => {
 			const next = element[property as keyof typeof element];
 
 			value.set(parse(String(next)) ?? next);
