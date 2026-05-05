@@ -17,6 +17,13 @@ export class Fragment {
 	};
 
 	/**
+	 * Is template caching enabled?
+	 */
+	get caching(): boolean {
+		return this.#configuration.cache;
+	}
+
+	/**
 	 * Fragment identifier
 	 */
 	get identifier(): unknown {
@@ -91,14 +98,12 @@ export class Fragment {
 
 			mapNodes(
 				data,
-				data.items.flatMap(
-					item => item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes ?? [],
-				),
+				data.items.flatMap(item => item.nodes!),
 			);
 		}
 
 		return data.items.flatMap(
-			item => item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes ?? [],
+			item => item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes!,
 		);
 	}
 
@@ -137,7 +142,7 @@ function removeFragment(data: FragmentData): void {
 			fragments?.[fragmentIndex]?.remove();
 		}
 
-		removeNodes(nodes ?? []);
+		removeNodes(nodes!);
 	}
 
 	data.items.length = 0;

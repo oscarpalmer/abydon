@@ -1,29 +1,31 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
-import {parse} from '@oscarpalmer/atoms/string';
-import {computed, isReactive, isSignal} from '@oscarpalmer/mora';
+import {computed, isSignal} from '@oscarpalmer/mora';
 import {
 	EVENT_ON_VALUE,
 	EXPRESSION_ABYDON_ATTRIBUTE_PREFIX,
 	EXPRESSION_ABYDON_CONTENT,
 	EXPRESSION_EVENT_PREFIX,
-	EXPRESSION_PERIOD,
 	INPUT_TYPE_CHECKBOX,
+	INPUT_TYPE_RADIO,
 	PROPERTY_CHECKED,
 	PROPERTY_VALUE,
-} from '../../constants';
-import {isInputElement} from '../../helpers/dom';
-import type {FragmentData} from '../../models';
-import {mapEvent} from '../event';
+} from '../constants';
+import {isInputElement} from '../helpers/dom';
+import type {FragmentData} from '../models';
+import {mapEvent} from '../node/event';
 import {setAttribute} from './value';
 
 function getValue(data: FragmentData, original: string): unknown {
-	const matches = EXPRESSION_ABYDON_CONTENT.exec(original ?? '');
+	const matches = EXPRESSION_ABYDON_CONTENT.exec(original);
 
 	return matches == null ? original : data.values[+matches[1]];
 }
 
 export function mapAttributes(data: FragmentData, element: HTMLElement | SVGElement): void {
-	const attributes = [...element.attributes];
+	const attributes = [...element.attributes].sort((first, second) =>
+		first.name.localeCompare(second.name),
+	);
+
 	const {length} = attributes;
 
 	for (let index = 0; index < length; index += 1) {
@@ -41,13 +43,8 @@ export function mapAttributes(data: FragmentData, element: HTMLElement | SVGElem
 				mapEvent(element, actualName, actualValue);
 				break;
 
-			case EXPRESSION_PERIOD.test(actualName):
-			case typeof actualValue === 'function':
-			case isReactive(actualValue):
-				mapValue(data, element, actualName, actualValue);
-				break;
-
 			default:
+				mapValue(data, element, actualName, actualValue);
 				break;
 		}
 	}
@@ -65,23 +62,9 @@ function mapValue(
 		setAttribute(data, element, name, value);
 	}
 
-	if (!isInputElement(element) || !isSignal(value)) {
-		return;
-	}
-
-	let property: string | undefined;
-
-	if (name === PROPERTY_CHECKED && element.type === INPUT_TYPE_CHECKBOX) {
-		property = PROPERTY_CHECKED;
-	} else if (name === PROPERTY_VALUE) {
-		property = PROPERTY_VALUE;
-	}
-
-	if (property != null) {
+	if (isInputElement(element) && isSignal(value) && name in element) {
 		mapEvent(element, EVENT_ON_VALUE, () => {
-			const next = element[property as keyof typeof element];
-
-			value.set(parse(String(next)) ?? next);
+			value.set(element[name as keyof typeof element]);
 		});
 	}
 }

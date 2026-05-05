@@ -1,24 +1,25 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
+import {getString} from '@oscarpalmer/atoms/string';
 import {
 	computed,
 	isComputed,
 	isReactive,
 	isSignal,
 	type Computed,
-	type Reactive,
+	type ReactiveArray,
 } from '@oscarpalmer/mora';
 import {isHTMLOrSVGElement} from '@oscarpalmer/toretto/is';
+import {mapAttributes} from '../attribute/index';
 import {EVENT_ON_VALUE, EXPRESSION_ABYDON_CONTENT, EXPRESSION_TEXTAREA_VALUE} from '../constants';
-import {handleFragments} from '../fragments';
+import {Fragments, fragmentsStates, handleFragments} from '../fragments';
 import {isFragment, isFragments} from '../helpers';
 import {createNodes} from '../helpers/dom';
 import type {FragmentData} from '../models';
-import {mapAttributes} from './attribute';
 import {mapEvent} from './event';
 import {setReactiveValue} from './value';
 
 function mapNode(data: FragmentData, comment: Comment): void {
-	const matches = EXPRESSION_ABYDON_CONTENT.exec(comment.textContent ?? '');
+	const matches = EXPRESSION_ABYDON_CONTENT.exec(comment.textContent);
 	const value = matches == null ? null : data.values[+matches[1]];
 
 	if (value != null) {
@@ -53,18 +54,22 @@ export function mapNodes(data: FragmentData, nodes: ChildNode[]): void {
 }
 
 function mapTextarea(data: FragmentData, element: HTMLTextAreaElement): void {
-	const [, index] = EXPRESSION_TEXTAREA_VALUE.exec(element.value) ?? [];
+	const [, index] =
+		EXPRESSION_TEXTAREA_VALUE.exec(element.textContent) ??
+		EXPRESSION_TEXTAREA_VALUE.exec(element.value) ??
+		[];
 
 	if (index == null) {
 		return;
 	}
 
+	element.textContent = '';
 	element.value = '';
 
 	const value = data.values[Number.parseInt(index, 10)];
 
 	if (isSignal(value)) {
-		element.value = String(value.peek());
+		element.value = getString(value.peek());
 
 		mapEvent(element, EVENT_ON_VALUE, () => {
 			value.set(element.value);
@@ -72,7 +77,7 @@ function mapTextarea(data: FragmentData, element: HTMLTextAreaElement): void {
 
 		data.mora.subscribers.add(
 			value.subscribe(value => {
-				element.value = String(value);
+				element.value = getString(value);
 			}),
 		);
 
@@ -88,11 +93,11 @@ function mapTextarea(data: FragmentData, element: HTMLTextAreaElement): void {
 	}
 
 	if (reactive == null) {
-		element.value = String(value);
+		element.value = '';
 	} else {
 		data.mora.subscribers.add(
 			reactive.subscribe(value => {
-				element.value = String(value);
+				element.value = getString(value);
 			}),
 		);
 	}
@@ -105,8 +110,7 @@ function mapValue(data: FragmentData, comment: Comment, value: unknown): void {
 			break;
 
 		case isFragments(value):
-			handleFragments(value, false);
-			setReactiveValue(data, comment, value.items as Reactive<unknown[], unknown>);
+			setFragmentsValue(data, comment, value);
 			break;
 
 		case isReactive(value):
@@ -137,4 +141,12 @@ function setComputedValue(data: FragmentData, comment: Comment, callback: Generi
 	data.mora.values.add(value);
 
 	setReactiveValue(data, comment, value);
+}
+
+function setFragmentsValue(data: FragmentData, comment: Comment, fragments: Fragments): void {
+	const state = fragmentsStates.get(fragments)!;
+
+	handleFragments(state, false);
+
+	setReactiveValue(data, comment, state.mapped as ReactiveArray<unknown>);
 }

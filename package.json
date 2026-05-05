@@ -1,6 +1,6 @@
 {
 	"name": "@oscarpalmer/abydon",
-	"version": "0.21.0",
+	"version": "0.22.0",
 	"keywords": [
 		"components",
 		"dom",
@@ -44,7 +44,7 @@
 	"dependencies": {
 		"@oscarpalmer/atoms": "^0.185",
 		"@oscarpalmer/mora": "^0.29",
-		"@oscarpalmer/toretto": "^0.42"
+		"@oscarpalmer/toretto": "^0.43"
 	},
 	"devDependencies": {
 		"@oscarpalmer/oui": "^0.20",

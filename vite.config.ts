@@ -25,10 +25,11 @@ export default defineConfig({
 	},
 	test: {
 		coverage: {
-			include: ['src/**/*.ts'],
+			include: ['./src/**/*.ts'],
 			provider: 'istanbul',
 		},
 		environment: 'jsdom',
+		include: ['./test/**/*.test.ts'],
 		watch: false,
 	},
 });

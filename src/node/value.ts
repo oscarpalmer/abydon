@@ -113,11 +113,7 @@ function replaceText(item: FragmentItem, comment: Comment, isNullable: boolean):
 	replaceNodes(item.nodes ?? [], to);
 }
 
-function setArray(
-	item: FragmentItem,
-	comment: Comment,
-	value: unknown[],
-): Partial<FragmentItem> | boolean {
+function setArray(item: FragmentItem, comment: Comment, value: unknown[]): Partial<FragmentItem> {
 	if (value.length === 0) {
 		return {
 			nodes: setText(item, comment, value),
@@ -129,7 +125,9 @@ function setArray(
 	const next = templates.map(fragment => fragment.identifier) as unknown[];
 	const previous = item.fragments?.map(fragment => fragment.identifier) ?? [];
 
-	if (new Set(next).size !== templates.length) {
+	const nextSet = new Set(next);
+
+	if (nextSet.size !== templates.length) {
 		templates = [];
 	}
 
@@ -150,7 +148,7 @@ function setArray(
 
 	return handleArray(
 		{
-			next: new Set(next),
+			next: nextSet,
 			previous: new Set(previous),
 		},
 		{
@@ -163,11 +161,7 @@ function setArray(
 
 function setNodes(item: FragmentItem, comment: Comment, next: ChildNode[]): ChildNode[] {
 	if (item.nodes == null) {
-		if (comment.parentNode != null) {
-			replaceNodes([comment], next);
-		} else if (item.text?.parentNode != null) {
-			replaceNodes([item.text], next);
-		}
+		replaceNodes([comment], next);
 	} else {
 		replaceNodes(item.nodes, next);
 	}
@@ -196,25 +190,16 @@ export function setReactiveValue(
 				setReactiveValueForSingle(item, comment, value);
 			}
 
-			item.nodes = [...(item.nodes ?? [comment])];
+			item.nodes ??= [comment];
 		}),
 	);
 }
 
 function setReactiveValueForArray(item: FragmentItem, comment: Comment, value: unknown[]): void {
-	const result = setArray(item, comment, value);
+	const {fragments, nodes} = setArray(item, comment, value);
 
-	item.fragments = typeof result === 'boolean' ? undefined : result?.fragments;
-
-	if (typeof result === 'boolean') {
-		if (result) {
-			item.nodes = item.text == null ? [] : [item.text];
-		} else {
-			item.nodes = undefined;
-		}
-	} else {
-		item.nodes = result?.nodes;
-	}
+	item.fragments = fragments;
+	item.nodes = nodes;
 }
 
 function setReactiveValueForSingle(item: FragmentItem, comment: Comment, value: unknown): void {

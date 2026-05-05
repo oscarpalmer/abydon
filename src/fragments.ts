@@ -14,13 +14,6 @@ import type {FragmentsState} from './models';
 export class Fragments {
 	readonly #state: FragmentsState;
 
-	/**
-	 * Fragment items
-	 */
-	get items(): ReactiveArray<Fragment> {
-		return this.#state.mapped;
-	}
-
 	constructor(
 		items: ReactiveArray<unknown>,
 		identify: (item: unknown) => unknown,
@@ -39,18 +32,16 @@ export class Fragments {
 			subscriber: undefined,
 		};
 
-		states.set(this, this.#state);
+		fragmentsStates.set(this, this.#state);
 
 		initializeFragments(this.#state);
 	}
 }
 
 export function handleFragments(item: Fragments | FragmentsState, remove: boolean): void {
-	const state = isFragments(item) ? states.get(item) : item;
+	const state = isFragments(item) ? fragmentsStates.get(item) : item;
 
-	if (state != null) {
-		(remove ? removeFragments : initializeFragments)(state);
-	}
+	(remove ? removeFragments : initializeFragments)(state!);
 }
 
 function handleItems(state: FragmentsState, items: unknown[]): void {
@@ -135,4 +126,4 @@ function updateFragments(state: FragmentsState, active?: Set<string>): void {
 
 //
 
-const states: WeakMap<Fragments, FragmentsState> = new WeakMap();
+export const fragmentsStates: WeakMap<Fragments, FragmentsState> = new WeakMap();

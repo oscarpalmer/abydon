@@ -1,5 +1,5 @@
 import '@oscarpalmer/mora';
-import type {ReactiveArray} from '@oscarpalmer/mora';
+import {isArray, type ReactiveArray} from '@oscarpalmer/mora';
 import {Fragment} from './fragment';
 import {Fragments} from './fragments';
 
@@ -15,6 +15,18 @@ export function fragments<Item>(
 	identify: (item: Item) => unknown,
 	fragment: (item: Item) => Fragment,
 ): Fragments {
+	if (!isArray(array)) {
+		throw new TypeError('Fragments array must be a reactive array');
+	}
+
+	if (typeof identify !== 'function') {
+		throw new TypeError('Fragments identify must be a function');
+	}
+
+	if (typeof fragment !== 'function') {
+		throw new TypeError('Fragments fragment must be a function');
+	}
+
 	return new Fragments(array as ReactiveArray<unknown>, identify as never, fragment as never);
 }
 

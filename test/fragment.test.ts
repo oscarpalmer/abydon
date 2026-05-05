@@ -1,85 +1,186 @@
 import {expect, test} from 'vitest';
 import * as Abydon from '../src/index';
 
-test('attribute: class', () =>
-	new Promise<void>(done => {
-		const bool = Abydon.signal(false);
+test('array: complex', () => {
+	const array = Abydon.array([1, 2, 3]);
 
-		const fragment = Abydon.html`<div class.test="${bool}">test</div>`;
+	const items = array.map(item => Abydon.html`<p>${item}</p>`.identify(item));
 
-		fragment.appendTo(document.body);
+	const fragment = Abydon.html`${items}`;
 
-		const div = document.querySelector('div')!;
+	fragment.appendTo(document.body);
 
-		expect(div.classList.contains('test')).toBe(false);
+	expect(document.body.innerHTML).toBe('<p>1</p><p>2</p><p>3</p>');
 
-		bool.set(true);
+	array.push(4);
 
-		setTimeout(() => {
-			expect(div.classList.contains('test')).toBe(true);
+	expect(document.body.innerHTML).toBe('<p>1</p><p>2</p><p>3</p><p>4</p>');
 
-			bool.set(false);
-		}, 25);
+	array.splice(1, 2);
 
-		setTimeout(() => {
-			expect(div.classList.contains('test')).toBe(false);
+	expect(document.body.innerHTML).toBe('<p>1</p><p>4</p>');
 
-			fragment.remove();
+	array.set([5, 6]);
 
-			done();
-		}, 50);
-	}));
+	expect(document.body.innerHTML).toBe('<p>5</p><p>6</p>');
 
-test('attribute: style', () =>
-	new Promise<void>(done => {
-		const background = Abydon.signal(false);
-		const color = Abydon.signal('red');
-		const fontSize = Abydon.signal<number | undefined>(undefined);
+	array.push(5, 6);
 
-		const fragment = Abydon.html`<div style.background.red="${background}" style.color="${color}" style.font-size.px="${fontSize}">test</div>`;
+	expect(document.body.innerHTML).toBe('<p>5</p><p>6</p><p>5</p><p>6</p>');
 
-		fragment.appendTo(document.body);
+	fragment.remove();
+});
 
-		const div = document.querySelector('div')!;
+test('array: simple', () => {
+	const array = Abydon.signal([1, 2, 3]);
 
-		expect(div.style.backgroundColor).toBe('');
-		expect(div.style.color).toBe('red');
-		expect(div.style.fontSize).toBe('');
+	const fragment = Abydon.html`${array}`;
 
-		background.set(true);
-		color.set('blue');
-		fontSize.set(16);
+	fragment.appendTo(document.body);
 
-		setTimeout(() => {
-			expect(div.style.backgroundColor).toBe('red');
-			expect(div.style.color).toBe('blue');
-			expect(div.style.fontSize).toBe('16px');
+	expect(document.body.innerHTML).toBe('123');
 
-			color.set('green');
-			fontSize.set(undefined);
-		}, 25);
+	array.set([]);
 
-		setTimeout(() => {
-			expect(div.style.backgroundColor).toBe('red');
-			expect(div.style.color).toBe('green');
-			expect(div.style.fontSize).toBe('');
+	expect(document.body.innerHTML).toBe('<!--abydon.0-->');
 
-			fragment.remove();
+	array.set([4, 5]);
 
-			done();
-		}, 50);
-	}));
+	expect(document.body.innerHTML).toBe('45');
+
+	fragment.remove();
+
+	expect(document.body.innerHTML).toBe('');
+});
 
 test('basic', () => {
-	const fragment = Abydon.html`<div>test</div>`;
+	const value = Abydon.signal('Hello, world!');
+
+	const fragment = Abydon.html`<div>
+	<!-- this is an ignored comment -->
+	<p>${'Hello, world!'}</p>
+	<p>${value}</p>
+	<p>${() => value.get().toUpperCase()}</p>
+	<p>${[123, true, null, undefined, 'test']}</p>
+	<p>${() => [123, true, null, undefined, 'test']}</p>
+</div>`;
 
 	expect(document.body.innerHTML).toBe('');
 
 	fragment.appendTo(document.body);
 
-	expect(document.body.innerHTML).toBe('<div>test</div>');
+	expect(document.body.innerHTML).toBe(`<div>
+	<!-- this is an ignored comment -->
+	<p>Hello, world!</p>
+	<p>Hello, world!</p>
+	<p>HELLO, WORLD!</p>
+	<p>123truetest</p>
+	<p>123truetest</p>
+</div>`);
 
 	fragment.remove();
 
 	expect(document.body.innerHTML).toBe('');
+
+	fragment.appendTo(document.body);
+
+	expect(document.body.innerHTML).toBe(`<div>
+	<!-- this is an ignored comment -->
+	<p>Hello, world!</p>
+	<p>Hello, world!</p>
+	<p>HELLO, WORLD!</p>
+	<p>123truetest</p>
+	<p>123truetest</p>
+</div>`);
+
+	value.set('Goodbye, world!');
+
+	expect(document.body.innerHTML).toBe(`<div>
+	<!-- this is an ignored comment -->
+	<p>Hello, world!</p>
+	<p>Goodbye, world!</p>
+	<p>GOODBYE, WORLD!</p>
+	<p>123truetest</p>
+	<p>123truetest</p>
+</div>`);
+
+	value.set('');
+
+	expect(document.body.innerHTML).toBe(`<div>
+	<!-- this is an ignored comment -->
+	<p>Hello, world!</p>
+	<p><!--abydon.0--></p>
+	<p><!--abydon.1--></p>
+	<p>123truetest</p>
+	<p>123truetest</p>
+</div>`);
+
+	fragment.remove();
+});
+
+test('get', () => {
+	const child = Abydon.html`<p>Child</p>`;
+	const parent = Abydon.html`${child}`;
+
+	const nodes = parent.get();
+
+	expect(nodes).toEqual([child.get()[0]]);
+
+	expect(nodes.map(node => (node instanceof HTMLElement ? node.outerHTML : ''))).toEqual([
+		'<p>Child</p>',
+	]);
+});
+
+test('nested', () => {
+	const element = document.createElement('div');
+
+	element.textContent = 'Node';
+
+	const node = Abydon.signal(element);
+	const prefix = Abydon.html`${({abc: 123})}`;
+	const span = Abydon.html`<span>Span</span>`;
+	const suffix = Abydon.html`<span>Suffix</span>`;
+	const text = Abydon.signal({abc: 123});
+
+	const parent = Abydon.html`${prefix}<div>${node}${span}${text}</div>${suffix}`;
+
+	expect(document.body.innerHTML).toBe('');
+
+	parent.appendTo(document.body);
+
+	expect(document.body.innerHTML).toBe(
+		`{"abc":123}<div><div>Node</div><span>Span</span>{"abc":123}</div><span>Suffix</span>`,
+	);
+
+	parent.remove();
+
+	expect(document.body.innerHTML).toBe('');
+});
+
+test('options', () => {
+	const fragment = Abydon.html`<div>Hello, world!</div>`;
+
+	expect(fragment.caching).toBe(true);
+	expect(fragment.identifier).toBe(undefined);
+
+	fragment.identify('test');
+
+	expect(fragment.identifier).toBe('test');
+
+	fragment.configure({cache: false});
+	fragment.configure({identifier: 'configured'});
+
+	expect(fragment.caching).toBe(false);
+	expect(fragment.identifier).toBe('configured');
+
+	fragment.configure({cache: 123 as never});
+	fragment.identify(undefined);
+
+	expect(fragment.caching).toBe(false);
+	expect(fragment.identifier).toBe(undefined);
+
+	fragment.configure(123 as never);
+
+	expect(fragment.caching).toBe(false);
+	expect(fragment.identifier).toBe(undefined);
 });

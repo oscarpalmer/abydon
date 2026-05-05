@@ -35,7 +35,7 @@ export const EVENT_ON_VALUE = 'on';
 
 export const EVENT_OPTIONS_DELIMITER = ':';
 
-export const EXPRESSION_ABYDON_ATTRIBUTE_FULL = /(@?[\w-.]+)="<!--abydon.(\d+)-->"/g;
+export const EXPRESSION_ABYDON_ATTRIBUTE_FULL = /(@?[\w-.]+(?::[a-z:]+)?)="<!--abydon.(\d+)-->"/g;
 
 export const EXPRESSION_ABYDON_ATTRIBUTE_PREFIX = /^abydon-/;
 
@@ -46,6 +46,10 @@ export const EXPRESSION_ATTRIBUTE_CLASS = /^class\./;
 export const EXPRESSION_ATTRIBUTE_STYLE_FULL = /^style\.([\w-]+)(?:\.([\w-]+))?$/;
 
 export const EXPRESSION_ATTRIBUTE_STYLE_PREFIX = /^style\./;
+
+export const EXPRESSION_ATTRIBUTE_STYLE_PROPERTY = /^style\.--/;
+
+export const EXPRESSION_EVENT_ATTRIBUTE = /^@([\w-]+)(?::([a-z:]+))?="$/i;
 
 export const EXPRESSION_EVENT_NAME = /^@?([\w-]+)(?::([a-z:]+))?$/i;
 
@@ -59,9 +63,11 @@ export const EXPRESSION_EVENT_PREFIX = /^@/;
 
 export const EXPRESSION_PERIOD = /\./;
 
-export const EXPRESSION_TEXTAREA_VALUE = /<!--abydon\.(\d+)-->/;
+export const EXPRESSION_TEXTAREA_VALUE = /(?:<|&lt;)!--abydon\.(\d+)--(?:>|&gt;)/;
 
 export const INPUT_TYPE_CHECKBOX = 'checkbox';
+
+export const INPUT_TYPE_RADIO = 'radio';
 
 export const NAME_FRAGMENT = '$fragment';
 
@@ -74,3 +80,7 @@ export const PROPERTY_IDENTIFIER = 'identifier';
 export const PROPERTY_VALUE = 'value';
 
 export const TEMPLATE_ITEM = '<>';
+
+export const VALUE_TRUE = 'true';
+
+export const WHITESPACE = /\s+/g;

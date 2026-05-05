@@ -40,9 +40,16 @@ function getType(element: HTMLElement | SVGElement, type: string): string {
 }
 
 export function mapEvent(element: HTMLElement | SVGElement, name: string, value: unknown): void {
-	const [, type, options] = EXPRESSION_EVENT_NAME.exec(name) ?? [];
+	const [, type, options] = EXPRESSION_EVENT_NAME.exec(name)!;
 
-	if (type != null && typeof value === 'function') {
-		on(element, getType(element, type), value as EventListener, getOptions(options ?? ''));
+	const values = Array.isArray(value) ? value : [value];
+	const {length} = values;
+
+	for (let index = 0; index < length; index += 1) {
+		const item = values[index];
+
+		if (typeof item === 'function') {
+			on(element, getType(element, type), item as EventListener, getOptions(options ?? ''));
+		}
 	}
 }

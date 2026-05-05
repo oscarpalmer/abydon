@@ -1,9 +1,17 @@
-import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
-import {EXPRESSION_ABYDON_ATTRIBUTE_FULL} from './constants';
+import {getString} from '@oscarpalmer/atoms/string';
+import {
+	EXPRESSION_ABYDON_ATTRIBUTE_FULL,
+	EXPRESSION_EVENT_ATTRIBUTE,
+	WHITESPACE,
+} from './constants';
 import type {FragmentData} from './models';
 
 function handleExpression(data: FragmentData, prefix: string, expression: unknown): string {
 	if (Array.isArray(expression)) {
+		if (EXPRESSION_EVENT_ATTRIBUTE.test(prefix.split(WHITESPACE).at(-1)!)) {
+			return transformExpression(prefix, data.values.push(expression) - 1);
+		}
+
 		const {length} = expression;
 
 		let expressions = '';
@@ -19,7 +27,9 @@ function handleExpression(data: FragmentData, prefix: string, expression: unknow
 		return transformExpression(prefix, data.values.push(expression) - 1);
 	}
 
-	return isNullableOrWhitespace(expression) ? prefix : `${prefix}${expression}`;
+	const asString = getString(expression);
+
+	return asString.trim().length === 0 ? prefix : `${prefix}${asString}`;
 }
 
 export function parse(data: FragmentData): string {
