@@ -5,7 +5,7 @@ import {Fragments} from './fragments';
 
 /**
  * Create a _Fragments_ instance from a reactive array
- * 
+ *
  * _A Fragments instance can be used to efficiently render a list of items that may change over time, using unique identifiers to track each item, only adding, removing, or updating each related Fragment._
  *
  * @example
@@ -48,7 +48,7 @@ export function fragments<Item>(
 
 /**
  * Create a _Fragment_ from a template
- * 
+ *
  * _A Fragment can be used to efficiently render a template that may change over time, only updating the necessary parts of the DOM._
  *
  * @example

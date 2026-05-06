@@ -12,6 +12,7 @@ import {setComputedValue} from '../helpers';
 import type {FragmentData} from '../models';
 import {mapEvent} from '../node/event';
 import {setAttribute} from './value';
+import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
 
 function compareAttributes(first: Attr, second: Attr): number {
 	return first.name.localeCompare(second.name);
@@ -55,15 +56,16 @@ export function mapAttributes(
 		const {name, value} = attributes[index];
 
 		const actualName = name.replace(EXPRESSION_ABYDON_ATTRIBUTE_PREFIX, '');
-		const actualValue = getValue(data, value);
 
 		if (actualName !== name) {
 			element.removeAttribute(name);
 		}
 
-		if (actualName === PROPERTY_VALUE && ignoreValue) {
+		if (isNullableOrWhitespace(value) || (actualName === PROPERTY_VALUE && ignoreValue)) {
 			continue;
 		}
+
+		const actualValue = getValue(data, value);
 
 		switch (true) {
 			case EXPRESSION_EVENT_PREFIX.test(actualName):

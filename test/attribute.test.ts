@@ -5,7 +5,7 @@ test('any', () => {
 	const value = Abydon.signal('test');
 	const hidden = Abydon.computed(() => value.get() === 'test');
 
-	const fragment = Abydon.html`<div hidden="${hidden}" id="${{abc: 123}}">
+	const fragment = Abydon.html`<div empty-attribute hidden="${hidden}" id="${{abc: 123}}">
 	<input type="checkbox" checked="${() => value.get() === 'test'}">
 	<input type="checkbox" checked="${[1, 2, 3]}">
 </div>`;
@@ -17,6 +17,8 @@ test('any', () => {
 
 	expect(div.hidden).toBe(true);
 	expect(input.checked).toBe(true);
+
+	expect(div.hasAttribute('empty-attribute')).toBe(true);
 
 	value.set('changed');
 
