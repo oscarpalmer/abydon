@@ -1,4 +1,5 @@
-import type {PlainObject} from '@oscarpalmer/atoms/models';
+import type {GenericCallback, PlainObject} from '@oscarpalmer/atoms/models';
+import {computed, type Computed} from '@oscarpalmer/mora';
 import {
 	ARRAY_COMPARISON_ADDED,
 	ARRAY_COMPARISON_DISSIMILAR,
@@ -8,6 +9,7 @@ import {
 } from '../constants';
 import type {Fragment} from '../fragment';
 import type {Fragments} from '../fragments';
+import type {FragmentData} from '../models';
 
 export function compareArrays(
 	first: unknown[],
@@ -28,18 +30,18 @@ export function compareArrays(
 }
 
 /**
- * Is the value a Fragment?
+ * Is the value a _Fragment_?
  * @param value Value to check
- * @returns `true` if the value is a Fragment, otherwise `false`
+ * @returns `true` if the value is a _Fragment_, otherwise `false`
  */
 export function isFragment(value: unknown): value is Fragment {
 	return isNamed(value, NAME_FRAGMENT);
 }
 
 /**
- * Is the value a Fragments?
+ * Is the value a _Fragments_ instance?
  * @param value Value to check
- * @returns `true` if the value is a Fragments, otherwise `false`
+ * @returns `true` if the value is a _Fragments_ instance, otherwise `false`
  */
 export function isFragments(value: unknown): value is Fragments {
 	return isNamed(value, NAME_FRAGMENTS);
@@ -52,4 +54,16 @@ function isNamed(value: unknown, name: string): boolean {
 		name in value &&
 		(value as PlainObject)[name] === true
 	);
+}
+
+export function setComputedValue(
+	data: FragmentData,
+	callback: GenericCallback,
+	after: (computation: Computed<unknown>) => void,
+): void {
+	const computation = computed(callback);
+
+	data.mora.values.add(computation);
+
+	after(computation);
 }

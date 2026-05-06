@@ -1,16 +1,18 @@
 import type {Reactive, ReactiveArray, Unsubscribe} from '@oscarpalmer/mora';
 import type {Fragment} from './fragment';
 
+/**
+ * Configuration for a _Fragment_
+ */
 export type FragmentConfiguration = {
 	/**
 	 * Should the template be cached? _(defaults to `true`)_
 	 */
 	cache?: boolean;
 	/**
-	 * Identifier for the fragment
+	 * Identifier for the _Fragment_
 	 *
-	 * _(An identifier can be used to uniquely identify a fragment,
-	 * which helps prevent re-rendering in certain scenarios)_
+	 * _An identifier can be used to uniquely identify a Fragment, which helps prevent re-rendering in reactive arrays and Fragments_
 	 */
 	identifier?: unknown;
 };
@@ -19,7 +21,7 @@ export type FragmentData = {
 	expressions: unknown[];
 	items: FragmentItem[];
 	mora: MoraData;
-	strings: TemplateStringsArray;
+	strings: TemplateStringsArray | string[];
 	template?: string;
 	values: unknown[];
 };

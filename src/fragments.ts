@@ -74,7 +74,9 @@ function handleItems(state: FragmentsState, items: unknown[]): void {
 			}
 		}
 
-		instance.identify(key);
+		instance.configure({
+			identifier: key,
+		});
 
 		state.instances[key] = instance;
 
@@ -88,7 +90,7 @@ function handleItems(state: FragmentsState, items: unknown[]): void {
 	updateFragments(state, keys);
 }
 
-export function initializeFragments(state: FragmentsState): void {
+function initializeFragments(state: FragmentsState): void {
 	state.subscriber ??= state.array.subscribe(items => {
 		handleItems(state, items);
 	});

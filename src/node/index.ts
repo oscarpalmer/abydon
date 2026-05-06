@@ -1,21 +1,12 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
-import {getString} from '@oscarpalmer/atoms/string';
-import {
-	computed,
-	isComputed,
-	isReactive,
-	isSignal,
-	type Computed,
-	type ReactiveArray,
-} from '@oscarpalmer/mora';
+import {isReactive, type ReactiveArray} from '@oscarpalmer/mora';
 import {isHTMLOrSVGElement} from '@oscarpalmer/toretto/is';
-import {mapAttributes} from '../attribute/index';
-import {EVENT_ON_VALUE, EXPRESSION_ABYDON_CONTENT, EXPRESSION_TEXTAREA_VALUE} from '../constants';
+import {mapAttributes, mapAttributeValue} from '../attribute/index';
+import {EXPRESSION_ABYDON_CONTENT, EXPRESSION_TEXTAREA_VALUE} from '../constants';
 import {Fragments, fragmentsStates, handleFragments} from '../fragments';
-import {isFragment, isFragments} from '../helpers';
+import {isFragment, isFragments, setComputedValue} from '../helpers';
 import {createNodes} from '../helpers/dom';
 import type {FragmentData} from '../models';
-import {mapEvent} from './event';
 import {setReactiveValue} from './value';
 
 function mapNode(data: FragmentData, comment: Comment): void {
@@ -39,12 +30,17 @@ export function mapNodes(data: FragmentData, nodes: ChildNode[]): void {
 			continue;
 		}
 
-		if (node instanceof HTMLTextAreaElement) {
-			mapTextarea(data, node);
-		}
-
 		if (isHTMLOrSVGElement(node)) {
-			mapAttributes(data, node);
+			let ignoreValueAttribute = false;
+
+			if (node instanceof HTMLTextAreaElement) {
+				// Textareas are a special case because their value can be set via the `value` property
+				// or the text content. In order to support both, we need to check for the presence of
+				// the expression in both places and map it accordingly.
+				ignoreValueAttribute = mapTextarea(data, node);
+			}
+
+			mapAttributes(data, node, ignoreValueAttribute);
 		}
 
 		if (node.hasChildNodes()) {
@@ -53,64 +49,32 @@ export function mapNodes(data: FragmentData, nodes: ChildNode[]): void {
 	}
 }
 
-function mapTextarea(data: FragmentData, element: HTMLTextAreaElement): void {
+function mapTextarea(data: FragmentData, element: HTMLTextAreaElement): boolean {
 	const [, index] =
 		EXPRESSION_TEXTAREA_VALUE.exec(element.textContent) ??
 		EXPRESSION_TEXTAREA_VALUE.exec(element.value) ??
 		[];
 
 	if (index == null) {
-		return;
+		return false;
 	}
 
 	element.textContent = '';
 	element.value = '';
 
-	const value = data.values[Number.parseInt(index, 10)];
+	mapAttributeValue(data, element, 'value', data.values[Number.parseInt(index, 10)]);
 
-	if (isSignal(value)) {
-		element.value = getString(value.peek());
-
-		mapEvent(element, EVENT_ON_VALUE, () => {
-			value.set(element.value);
-		});
-
-		data.mora.subscribers.add(
-			value.subscribe(value => {
-				element.value = getString(value);
-			}),
-		);
-
-		return;
-	}
-
-	let reactive: Computed<unknown> | undefined;
-
-	if (typeof value === 'function') {
-		reactive = computed(value as GenericCallback);
-	} else if (isComputed(value)) {
-		reactive = value;
-	}
-
-	if (reactive == null) {
-		element.value = '';
-	} else {
-		data.mora.subscribers.add(
-			reactive.subscribe(value => {
-				element.value = getString(value);
-			}),
-		);
-	}
+	return true;
 }
 
 function mapValue(data: FragmentData, comment: Comment, value: unknown): void {
 	switch (true) {
 		case typeof value === 'function':
-			setComputedValue(data, comment, value as GenericCallback);
+			setComputedNode(data, comment, value as GenericCallback);
 			break;
 
 		case isFragments(value):
-			setFragmentsValue(data, comment, value);
+			setFragmentsNode(data, comment, value);
 			break;
 
 		case isReactive(value):
@@ -135,15 +99,13 @@ function replaceComment(data: FragmentData, comment: Comment, value: unknown): v
 	comment.replaceWith(...nodes);
 }
 
-function setComputedValue(data: FragmentData, comment: Comment, callback: GenericCallback): void {
-	const value = computed(callback);
-
-	data.mora.values.add(value);
-
-	setReactiveValue(data, comment, value);
+function setComputedNode(data: FragmentData, comment: Comment, callback: GenericCallback): void {
+	setComputedValue(data, callback, computation => {
+		setReactiveValue(data, comment, computation);
+	});
 }
 
-function setFragmentsValue(data: FragmentData, comment: Comment, fragments: Fragments): void {
+function setFragmentsNode(data: FragmentData, comment: Comment, fragments: Fragments): void {
 	const state = fragmentsStates.get(fragments)!;
 
 	handleFragments(state, false);

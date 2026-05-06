@@ -65,7 +65,7 @@ test('style', () =>
 		const fontSize = Abydon.signal<number | undefined>(undefined);
 		const property = Abydon.signal('value');
 
-		const fragment = Abydon.html`<div style.background.red="${background}" style.color="${color}" style.font-size.px="${fontSize}" style.position.absolute="${true}" style.--property="${property}">test</div>`;
+		const fragment = Abydon.html`<div style.background-color.red="${background}" style.color="${color}" style.font-size.px="${fontSize}" style.position.absolute="${true}" style.--property="${property}">test</div>`;
 
 		fragment.appendTo(document.body);
 
@@ -108,24 +108,31 @@ test('style', () =>
 test('value', () =>
 	new Promise<void>(done => {
 		const checked = Abydon.signal(false);
+		const ignored = Abydon.signal('ignored');
 		const text = Abydon.signal('test');
 
-		const fragment = Abydon.html`<input type="checkbox" checked="${checked}"><input type="text" value="${text}">`;
+		const fragment = Abydon.html`<input type="checkbox" checked="${checked}">
+<input type="text" value="${text}">
+<textarea value="${ignored}">${text}</textarea>`;
 
 		fragment.appendTo(document.body);
 
 		const checkboxInput = document.querySelector('input[type="checkbox"]')! as HTMLInputElement;
 		const textInput = document.querySelector('input[type="text"]')! as HTMLInputElement;
+		const textareaInput = document.querySelector('textarea')! as HTMLTextAreaElement;
 
 		expect(checkboxInput.checked).toBe(false);
 		expect(textInput.value).toBe('test');
+		expect(textareaInput.value).toBe('test');
 
 		checked.set(true);
+		ignored.set('changed but ignored');
 		text.set('changed from signal');
 
 		setTimeout(() => {
 			expect(checkboxInput.checked).toBe(true);
 			expect(textInput.value).toBe('changed from signal');
+			expect(textareaInput.value).toBe('changed from signal');
 
 			checkboxInput.checked = false;
 			textInput.value = 'changed in gui';
@@ -136,6 +143,7 @@ test('value', () =>
 			setTimeout(() => {
 				expect(checked.peek()).toBe(false);
 				expect(text.peek()).toBe('changed in gui');
+				expect(textareaInput.value).toBe('changed in gui');
 
 				fragment.remove();
 

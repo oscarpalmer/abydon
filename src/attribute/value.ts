@@ -1,6 +1,5 @@
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
 import {getString} from '@oscarpalmer/atoms/string';
-import {camelCase} from '@oscarpalmer/atoms/string/case';
 import {isReactive} from '@oscarpalmer/mora';
 import {setAttribute as setTorettoAttribute} from '@oscarpalmer/toretto/attribute';
 import {setStyle} from '@oscarpalmer/toretto/style';
@@ -10,23 +9,21 @@ import {
 	EXPRESSION_ATTRIBUTE_CLASS,
 	EXPRESSION_ATTRIBUTE_STYLE_FULL,
 	EXPRESSION_ATTRIBUTE_STYLE_PREFIX,
-	EXPRESSION_ATTRIBUTE_STYLE_PROPERTY,
-	PROPERTY_CHECKED,
-	PROPERTY_VALUE,
+	EXPRESSION_ATTRIBUTE_STYLE_VARIABLE,
 	VALUE_TRUE,
 } from '../constants';
 import type {FragmentData} from '../models';
 
-function getStyleValue(value: unknown, unit: string, isProperty: boolean): string | undefined {
-	if (removeStyleValue(value, unit, isProperty)) {
+function getStyleValue(value: unknown, unit: string, isVariable: boolean): string | undefined {
+	if (removeStyleValue(value, unit, isVariable)) {
 		return;
 	}
 
 	return value === true || value === VALUE_TRUE ? unit : `${getString(value)}${unit ?? ''}`;
 }
 
-function removeStyleValue(value: unknown, unit: unknown, isProperty: boolean): boolean {
-	if (value == null || value === false || (isProperty && isNullableOrWhitespace(value))) {
+function removeStyleValue(value: unknown, unit: unknown, isVariable: boolean): boolean {
+	if (value == null || value === false || (isVariable && isNullableOrWhitespace(value))) {
 		return true;
 	}
 
@@ -60,21 +57,15 @@ function setClassValues(
 	name: string,
 	value: unknown,
 ): void {
-	function update(value: unknown): void {
+	const classes = name.slice(ATTRIBUTE_CLASS_PREFIX_LENGTH).split(ATTRIBUTE_NAME_DELIMITER);
+
+	updateValue(data, value, value => {
 		if (value === true || value === VALUE_TRUE) {
 			element.classList.add(...classes);
 		} else {
 			element.classList.remove(...classes);
 		}
-	}
-
-	const classes = name.slice(ATTRIBUTE_CLASS_PREFIX_LENGTH).split(ATTRIBUTE_NAME_DELIMITER);
-
-	if (isReactive(value)) {
-		data.mora.subscribers.add(value.subscribe(update));
-	} else {
-		update(value);
-	}
+	});
 }
 
 function setStyleValues(
@@ -85,27 +76,15 @@ function setStyleValues(
 ): void {
 	let [, property, unit] = EXPRESSION_ATTRIBUTE_STYLE_FULL.exec(name)!;
 
-	const isProperty = EXPRESSION_ATTRIBUTE_STYLE_PROPERTY.test(name);
+	const isVariable = EXPRESSION_ATTRIBUTE_STYLE_VARIABLE.test(name);
 
-	property = camelCase(property);
-
-	if (isProperty) {
-		property = `--${property}`;
-	}
-
-	function update(value: unknown): void {
+	updateValue(data, value, value => {
 		setStyle(
 			element,
 			property as keyof CSSStyleDeclaration,
-			getStyleValue(value, unit, isProperty),
+			getStyleValue(value, unit, isVariable),
 		);
-	}
-
-	if (isReactive(value)) {
-		data.mora.subscribers.add(value.subscribe(update));
-	} else {
-		update(value);
-	}
+	});
 }
 
 function setValue(
@@ -114,27 +93,15 @@ function setValue(
 	name: string,
 	value: unknown,
 ): void {
-	const isReactiveValue = isReactive(value);
-
-	unsetValue(element, name, isReactiveValue ? value.peek() : value);
-
-	if (isReactiveValue) {
-		data.mora.subscribers.add(
-			value.subscribe(next => {
-				setTorettoAttribute(element, name, next);
-			}),
-		);
-	} else {
+	updateValue(data, value, value => {
 		setTorettoAttribute(element, name, value);
-	}
+	});
 }
 
-function unsetValue(element: HTMLElement | SVGElement, name: string, value: unknown): void {
-	if (name === PROPERTY_CHECKED) {
-		(element as HTMLInputElement).checked = !(value === true || value === VALUE_TRUE);
-	}
-
-	if (name === PROPERTY_VALUE) {
-		(element as HTMLInputElement).value = (element as HTMLInputElement).value === '' ? '_' : '';
+function updateValue(data: FragmentData, value: unknown, updater: (value: unknown) => void): void {
+	if (isReactive(value)) {
+		data.mora.subscribers.add(value.subscribe(updater));
+	} else {
+		updater(value);
 	}
 }

@@ -4,7 +4,7 @@ import * as Abydon from '../src/index';
 test('array: complex', () => {
 	const array = Abydon.array([1, 2, 3]);
 
-	const items = array.map(item => Abydon.html`<p>${item}</p>`.identify(item));
+	const items = array.map(item => Abydon.html`<p>${item}</p>`.configure({identifier: item}));
 
 	const fragment = Abydon.html`${items}`;
 
@@ -136,20 +136,32 @@ test('nested', () => {
 
 	element.textContent = 'Node';
 
+	const first = Abydon.html`<b>First</b>`;
+	const second = Abydon.html`<i>Second</i>`;
+
+	const bool = Abydon.signal(true);
 	const node = Abydon.signal(element);
-	const prefix = Abydon.html`${({abc: 123})}`;
+	const prefix = Abydon.html`${{abc: 123}}`;
 	const span = Abydon.html`<span>Span</span>`;
 	const suffix = Abydon.html`<span>Suffix</span>`;
 	const text = Abydon.signal({abc: 123});
 
-	const parent = Abydon.html`${prefix}<div>${node}${span}${text}</div>${suffix}`;
+	const fragment = Abydon.computed(() => (bool.get() ? first : second));
+
+	const parent = Abydon.html`${prefix}<div>${fragment}${node}${span}${text}</div>${suffix}`;
 
 	expect(document.body.innerHTML).toBe('');
 
 	parent.appendTo(document.body);
 
 	expect(document.body.innerHTML).toBe(
-		`{"abc":123}<div><div>Node</div><span>Span</span>{"abc":123}</div><span>Suffix</span>`,
+		`{"abc":123}<div><b>First</b><div>Node</div><span>Span</span>{"abc":123}</div><span>Suffix</span>`,
+	);
+
+	bool.set(false);
+
+	expect(document.body.innerHTML).toBe(
+		`{"abc":123}<div><i>Second</i><div>Node</div><span>Span</span>{"abc":123}</div><span>Suffix</span>`,
 	);
 
 	parent.remove();
@@ -160,27 +172,62 @@ test('nested', () => {
 test('options', () => {
 	const fragment = Abydon.html`<div>Hello, world!</div>`;
 
-	expect(fragment.caching).toBe(true);
+	expect(fragment.cache).toBe(true);
 	expect(fragment.identifier).toBe(undefined);
 
-	fragment.identify('test');
+	fragment.configure({identifier: 'test'});
 
 	expect(fragment.identifier).toBe('test');
 
 	fragment.configure({cache: false});
 	fragment.configure({identifier: 'configured'});
 
-	expect(fragment.caching).toBe(false);
+	expect(fragment.cache).toBe(false);
 	expect(fragment.identifier).toBe('configured');
 
 	fragment.configure({cache: 123 as never});
-	fragment.identify(undefined);
+	fragment.configure({identifier: undefined});
 
-	expect(fragment.caching).toBe(false);
+	expect(fragment.cache).toBe(false);
 	expect(fragment.identifier).toBe(undefined);
 
 	fragment.configure(123 as never);
 
-	expect(fragment.caching).toBe(false);
+	expect(fragment.cache).toBe(false);
 	expect(fragment.identifier).toBe(undefined);
+});
+
+test('position', () => {
+	const body = Abydon.html`<div><span></span></div>`;
+	const fragment = Abydon.html`<p></p>`;
+
+	body.appendTo(document.body);
+
+	const div = document.querySelector('div')!;
+
+	expect(document.body.innerHTML).toBe('<div><span></span></div>');
+
+	fragment.after(div);
+
+	expect(document.body.innerHTML).toBe('<div><span></span></div><p></p>');
+
+	fragment.before(div);
+
+	expect(document.body.innerHTML).toBe('<p></p><div><span></span></div>');
+
+	fragment.appendTo(div);
+
+	expect(document.body.innerHTML).toBe('<div><span></span><p></p></div>');
+
+	fragment.prependTo(div);
+
+	expect(document.body.innerHTML).toBe('<div><p></p><span></span></div>');
+
+	fragment.remove();
+
+	expect(document.body.innerHTML).toBe('<div><span></span></div>');
+
+	body.remove();
+
+	expect(document.body.innerHTML).toBe('');
 });

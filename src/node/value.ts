@@ -10,9 +10,30 @@ import type {FragmentData, FragmentItem} from '../models';
 
 //
 
+type ArrayData = {
+	next: ArrayDataIdentifiers;
+	previous: ArrayDataIdentifiers;
+	template: ArrayDataTemplate;
+};
+
+type ArrayDataIdentifiers = {
+	array: unknown[];
+	set: Set<unknown>;
+};
+
+type ArrayDataTemplate = {
+	empty: boolean;
+	items: Fragment[];
+};
+
 type Identifiers = {
-	next: Set<unknown>;
-	previous: Set<unknown>;
+	next: IdentifiersValues;
+	previous: IdentifiersValues;
+};
+
+type IdentifiersValues = {
+	array: unknown[];
+	set: Set<unknown>;
 };
 
 type BaseItems = {
@@ -34,7 +55,7 @@ function addToArray(
 ): void {
 	let position = nodes[0];
 
-	const before = added && !identifiers.previous.has(items.templates[0].identifier);
+	const before = added && !identifiers.previous.set.has(items.templates[0].identifier);
 
 	const next = items.next.flatMap(fragment =>
 		fragment.get().flatMap(node => ({
@@ -48,7 +69,7 @@ function addToArray(
 	for (let index = 0; index < length; index += 1) {
 		const node = next[index];
 
-		if (!(added && identifiers.previous.has(node.identifier))) {
+		if (!(added && identifiers.previous.set.has(node.identifier))) {
 			if (index === 0 && before) {
 				position.before(node.value);
 			} else {
@@ -60,6 +81,46 @@ function addToArray(
 	}
 }
 
+function getArrayData(item: FragmentItem, values: unknown[]): ArrayData {
+	const {length} = values;
+
+	const next: unknown[] = [];
+
+	let templates: Fragment[] = [];
+
+	for (let index = 0; index < length; index += 1) {
+		const value = values[index];
+
+		if (isFragment(value) && value.identifier != null) {
+			next.push(value.identifier);
+			templates.push(value);
+		}
+	}
+
+	const previous = item.fragments?.map(fragment => fragment.identifier) ?? [];
+
+	const nextSet = new Set(next);
+
+	if (nextSet.size !== templates.length) {
+		templates = [];
+	}
+
+	return {
+		next: {
+			array: next,
+			set: nextSet,
+		},
+		previous: {
+			array: previous,
+			set: new Set(previous),
+		},
+		template: {
+			empty: templates.length === 0,
+			items: templates,
+		},
+	};
+}
+
 function handleArray(
 	identifiers: Identifiers,
 	items: BaseItems,
@@ -67,17 +128,18 @@ function handleArray(
 ): Partial<FragmentItem> {
 	const next = items.templates.map(
 		template =>
-			items.fragments?.find(fragment => fragment.identifier === template.identifier) ?? template,
+			items.fragments.find(fragment => fragment.identifier === template.identifier) ?? template,
 	);
 
-	const comparison = compareArrays(items.fragments ?? [], items.templates);
+	const comparison = compareArrays(identifiers.previous.array, identifiers.next.array);
 
 	if (comparison !== ARRAY_COMPARISON_REMOVED) {
 		addToArray(identifiers, {...items, next}, nodes, comparison === ARRAY_COMPARISON_ADDED);
 	}
 
-	const toRemove =
-		items.fragments?.filter(fragment => !identifiers.next.has(fragment.identifier)) ?? [];
+	const toRemove = items.fragments.filter(
+		fragment => !identifiers.next.set.has(fragment.identifier),
+	);
 
 	const {length} = toRemove;
 
@@ -91,84 +153,70 @@ function handleArray(
 	};
 }
 
-function removeFragments(fragments: Fragment[] | undefined): void {
-	if (fragments != null) {
-		const {length} = fragments;
+function removeArray(item: FragmentItem, comment: Comment): Partial<FragmentItem> {
+	const fragments = (item.fragments ?? []).slice();
 
-		for (let index = 0; index < length; index += 1) {
-			fragments[index].remove();
-		}
-	}
+	const result = {
+		nodes: setText(item, comment),
+	};
+
+	removeFragmentsItems(fragments);
+
+	return result;
 }
 
-function replaceText(item: FragmentItem, comment: Comment, isNullable: boolean): void {
-	let to: ChildNode[];
+function removeFragmentsItems(fragments: Fragment[]): void {
+	const {length} = fragments;
 
-	if (isNullable) {
-		to = [comment];
-	} else {
-		to = item.text == null ? [] : [item.text];
+	for (let index = 0; index < length; index += 1) {
+		fragments[index].remove();
 	}
-
-	replaceNodes(item.nodes ?? [], to);
 }
 
 function setArray(item: FragmentItem, comment: Comment, value: unknown[]): Partial<FragmentItem> {
 	if (value.length === 0) {
-		return {
-			nodes: setText(item, comment, value),
-		};
+		return removeArray(item, comment);
 	}
 
-	let templates = value.filter(item => isFragment(item) && item.identifier != null) as Fragment[];
+	const {next, previous, template} = getArrayData(item, value);
 
-	const next = templates.map(fragment => fragment.identifier) as unknown[];
-	const previous = item.fragments?.map(fragment => fragment.identifier) ?? [];
+	if (
+		template.empty ||
+		item.nodes == null ||
+		previous.array.some(identifier => identifier == null)
+	) {
+		const fragments = (item.fragments ?? []).slice();
 
-	const nextSet = new Set(next);
-
-	if (nextSet.size !== templates.length) {
-		templates = [];
-	}
-
-	const noTemplates = templates.length === 0;
-
-	if (noTemplates || item.nodes == null || previous.some(identifier => identifier == null)) {
-		return {
-			fragments: noTemplates ? undefined : templates,
-			nodes: setNodes(
-				item,
-				comment,
-				noTemplates
+		const result = {
+			fragments: template.empty ? undefined : template.items,
+			nodes: replaceNodes(
+				item.nodes ?? [comment],
+				template.empty
 					? value.flatMap(item => createNodes(item))
-					: templates.flatMap(template => template.get()),
+					: template.items.flatMap(template => template.get()),
 			),
 		};
+
+		removeFragmentsItems(fragments);
+
+		return result;
 	}
 
 	return handleArray(
 		{
-			next: nextSet,
-			previous: new Set(previous),
+			next,
+			previous,
 		},
 		{
-			templates,
 			fragments: item.fragments ?? [],
+			templates: template.items,
 		},
 		item.nodes,
 	);
 }
 
 function setNodes(item: FragmentItem, comment: Comment, next: ChildNode[]): ChildNode[] {
-	if (item.nodes == null) {
-		replaceNodes([comment], next);
-	} else {
-		replaceNodes(item.nodes, next);
-	}
-
-	removeFragments(item.fragments);
-
-	return next;
+	return replaceNodes(item.nodes ?? [comment], next);
 }
 
 export function setReactiveValue(
@@ -180,8 +228,6 @@ export function setReactiveValue(
 
 	item ??= {};
 
-	item.text = new Text();
-
 	data.mora.subscribers.add(
 		reactive.subscribe(value => {
 			if (Array.isArray(value)) {
@@ -189,8 +235,6 @@ export function setReactiveValue(
 			} else {
 				setReactiveValueForSingle(item, comment, value);
 			}
-
-			item.nodes ??= [comment];
 		}),
 	);
 }
@@ -203,43 +247,31 @@ function setReactiveValueForArray(item: FragmentItem, comment: Comment, value: u
 }
 
 function setReactiveValueForSingle(item: FragmentItem, comment: Comment, value: unknown): void {
-	const valueIsFragment = isFragment(value);
+	const fragments = (item.fragments ?? []).slice();
 
-	item.fragments = valueIsFragment ? [value] : undefined;
+	const valueIsFragment = isFragment(value);
 
 	if (valueIsFragment || isChildNode(value)) {
 		item.nodes = setNodes(item, comment, createNodes(value));
 	} else {
 		item.nodes = setText(item, comment, value);
 	}
+
+	item.fragments = valueIsFragment ? [value] : undefined;
+
+	removeFragmentsItems(fragments);
 }
 
-function setText(item: FragmentItem, comment: Comment, value: unknown): ChildNode[] | undefined {
-	const isNullable = isNullableOrWhitespace(value);
+function setText(item: FragmentItem, comment: Comment, value?: unknown): ChildNode[] {
+	const valueIsNullable = isNullableOrWhitespace(value);
 
-	if (item.text != null) {
-		item.text.textContent = isNullable ? '' : getString(value);
-	}
+	item.text ??= new Text();
 
-	let result = false;
+	item.text.textContent = valueIsNullable ? '' : getString(value);
 
-	if (item.nodes != null) {
-		replaceText(item, comment, isNullable);
+	const result = valueIsNullable ? [comment] : [item.text];
 
-		result = !isNullable;
-	} else if (isNullable && comment.parentNode == null) {
-		item.text?.replaceWith(comment);
-	} else if (!isNullable && item?.text?.parentNode == null) {
-		if (item.text != null) {
-			comment.replaceWith(item.text);
-		}
+	replaceNodes(item.nodes ?? [comment], result);
 
-		result = true;
-	}
-
-	removeFragments(item.fragments);
-
-	if (result) {
-		return item.text == null ? [] : [item.text];
-	}
+	return result;
 }

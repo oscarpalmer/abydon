@@ -14,10 +14,6 @@ export function createNodes(value: unknown): ChildNode[] {
 	return [new Text(getString(value))];
 }
 
-export function isInputElement(node: Node): node is HTMLInputElement | HTMLSelectElement {
-	return node instanceof HTMLInputElement || node instanceof HTMLSelectElement;
-}
-
 export function removeNodes(nodes: ChildNode[]): void {
 	const {length} = nodes;
 
@@ -26,7 +22,7 @@ export function removeNodes(nodes: ChildNode[]): void {
 	}
 }
 
-export function replaceNodes(from: ChildNode[], to: ChildNode[]): void {
+export function replaceNodes(from: ChildNode[], to: ChildNode[]): ChildNode[] {
 	from[0]?.replaceWith(...to);
 
 	const {length} = from;
@@ -34,4 +30,6 @@ export function replaceNodes(from: ChildNode[], to: ChildNode[]): void {
 	for (let index = 1; index < length; index += 1) {
 		from[index].remove();
 	}
+
+	return to;
 }

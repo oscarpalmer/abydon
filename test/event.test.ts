@@ -272,10 +272,10 @@ test('textarea', () => {
 
 	const textAreas = document.querySelectorAll('textarea');
 
-	const one = textAreas[0]! as HTMLTextAreaElement;
-	const two = textAreas[1]! as HTMLTextAreaElement;
-	const three = textAreas[2]! as HTMLTextAreaElement;
-	const four = textAreas[3]! as HTMLTextAreaElement;
+	const one = textAreas[0]!;
+	const two = textAreas[1]!;
+	const three = textAreas[2]!;
+	const four = textAreas[3]!;
 
 	expect(document.body.innerHTML).toBe(`<textarea></textarea>
 <textarea></textarea>
@@ -285,7 +285,7 @@ test('textarea', () => {
 	expect(one.value).toBe('test');
 	expect(two.value).toBe('TEST');
 	expect(three.value).toBe('t-e-s-t');
-	expect(four.value).toBe('');
+	expect(four.value).toBe('{"abc":123}');
 
 	value.set('changed');
 
@@ -297,7 +297,7 @@ test('textarea', () => {
 	expect(one.value).toBe('changed');
 	expect(two.value).toBe('CHANGED');
 	expect(three.value).toBe('c-h-a-n-g-e-d');
-	expect(four.value).toBe('');
+	expect(four.value).toBe('{"abc":123}');
 
 	one.value = 'input';
 
@@ -314,7 +314,7 @@ test('textarea', () => {
 	expect(one.value).toBe('input');
 	expect(two.value).toBe('INPUT');
 	expect(three.value).toBe('i-n-p-u-t');
-	expect(four.value).toBe('');
+	expect(four.value).toBe('{"abc":123}');
 
 	fragment.remove();
 });

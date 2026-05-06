@@ -4,7 +4,7 @@ export const ARRAY_COMPARISON_DISSIMILAR = 'dissimilar';
 
 export const ARRAY_COMPARISON_REMOVED = 'removed';
 
-export const ATTRIBUTE_CLASS_PREFIX_LENGTH = 6;
+export const ATTRIBUTE_CLASS_PREFIX_LENGTH = 'class.'.length;
 
 export const ATTRIBUTE_NAME_DELIMITER = '.';
 
@@ -12,7 +12,7 @@ export const CHANGE_INPUTS = new Set(['checkbox', 'radio']);
 
 export const ERROR_FRAGMENT = 'Fragment function must return a Fragment instance';
 
-export const ERROR_IDENTIFIER_DUPLICATE = "Duplicate identifier found: '<id>'";
+export const ERROR_IDENTIFIER_DUPLICATE = "Duplicate identifier found: '<>'";
 
 export const ERROR_IDENTIFIER_TYPE = 'Identifier cannot be null or undefined';
 
@@ -47,33 +47,25 @@ export const EXPRESSION_ATTRIBUTE_STYLE_FULL = /^style\.([\w-]+)(?:\.([\w-]+))?$
 
 export const EXPRESSION_ATTRIBUTE_STYLE_PREFIX = /^style\./;
 
-export const EXPRESSION_ATTRIBUTE_STYLE_PROPERTY = /^style\.--/;
+export const EXPRESSION_ATTRIBUTE_STYLE_VARIABLE = /^style\.--/;
 
 export const EXPRESSION_EVENT_ATTRIBUTE = /^@([\w-]+)(?::([a-z:]+))?="$/i;
 
 export const EXPRESSION_EVENT_NAME = /^@?([\w-]+)(?::([a-z:]+))?$/i;
 
-export const EXPRESSION_EVENT_OPTIONS_ACTIVE = /^a(ctive)$/i;
+export const EXPRESSION_EVENT_OPTIONS_ACTIVE = /^a(?:ctive)$/i;
 
-export const EXPRESSION_EVENT_OPTIONS_CAPTURE = /^c(apture)$/i;
+export const EXPRESSION_EVENT_OPTIONS_CAPTURE = /^c(?:apture)$/i;
 
-export const EXPRESSION_EVENT_OPTIONS_ONCE = /^o(nce)$/i;
+export const EXPRESSION_EVENT_OPTIONS_ONCE = /^o(?:nce)$/i;
 
 export const EXPRESSION_EVENT_PREFIX = /^@/;
 
-export const EXPRESSION_PERIOD = /\./;
-
 export const EXPRESSION_TEXTAREA_VALUE = /(?:<|&lt;)!--abydon\.(\d+)--(?:>|&gt;)/;
-
-export const INPUT_TYPE_CHECKBOX = 'checkbox';
-
-export const INPUT_TYPE_RADIO = 'radio';
 
 export const NAME_FRAGMENT = '$fragment';
 
 export const NAME_FRAGMENTS = '$fragments';
-
-export const PROPERTY_CHECKED = 'checked';
 
 export const PROPERTY_IDENTIFIER = 'identifier';
 

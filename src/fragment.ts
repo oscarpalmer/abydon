@@ -19,12 +19,14 @@ export class Fragment {
 	/**
 	 * Is template caching enabled?
 	 */
-	get caching(): boolean {
+	get cache(): boolean {
 		return this.#configuration.cache;
 	}
 
 	/**
-	 * Fragment identifier
+	 * Identifier for the _Fragment_
+	 *
+	 * _An identifier can be used to uniquely identify a Fragment, which helps prevent re-rendering in reactive arrays and Fragments_
 	 */
 	get identifier(): unknown {
 		return this.#configuration.identifier;
@@ -48,7 +50,15 @@ export class Fragment {
 	}
 
 	/**
-	 * Append the fragment to the given element
+	 * Insert the _Fragment_ after the given element
+	 * @param element Element to insert after
+	 */
+	after(element: Element): void {
+		element.after(...this.get());
+	}
+
+	/**
+	 * Append the _Fragment_ to the given element
 	 * @param element Element to append to
 	 */
 	appendTo(element: Element): void {
@@ -56,9 +66,19 @@ export class Fragment {
 	}
 
 	/**
-	 * Configure the fragment
+	 * Insert the _Fragment_ before the given element
+	 * @param element Element to insert before
+	 */
+	before(element: Element): void {
+		element.before(...this.get());
+	}
+
+	/**
+	 * Configure the _Fragment_
+	 *
+	 * _Returns the Fragment instance for chaining_
 	 * @param configuration Configuration options
-	 * @returns Fragment
+	 * @returns _Fragment_
 	 */
 	configure(configuration: FragmentConfiguration): Fragment {
 		const actual = isPlainObject(configuration) ? configuration : {};
@@ -75,7 +95,7 @@ export class Fragment {
 	}
 
 	/**
-	 * Get a list of the fragment's nodes
+	 * Get a list of the _Fragment_'s nodes
 	 * @returns List of nodes
 	 */
 	get(): ChildNode[] {
@@ -108,21 +128,18 @@ export class Fragment {
 	}
 
 	/**
-	 * Set an identifier for the fragment
-	 *
-	 * _An identifier can be used to uniquely identify a fragment,
-	 * which helps prevent re-rendering in certain scenarios._
-	 * @param identifier Identifier
-	 * @returns Fragment
+	 * Prepend the _Fragment_ to the given element
+	 * @param element Element to prepend to
 	 */
-	identify(identifier: unknown): Fragment {
-		this.#configuration.identifier = identifier;
-
-		return this;
+	prependTo(element: Element): void {
+		element.prepend(...this.get());
 	}
 
 	/**
-	 * Remove the fragment from the DOM
+	 * Remove the _Fragment_ _(and all its descendants)_ from the _DOM_
+	 *
+	 * - _Any events, reactive values, and Fragments will also be cleaned up and removed_
+	 * - _After being removed, the Fragment can be re-inserted into the DOM_
 	 */
 	remove(): void {
 		removeFragment(this.#data);

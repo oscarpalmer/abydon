@@ -48,7 +48,7 @@ export function parse(data: FragmentData): string {
 	data.template = data.template.replaceAll(EXPRESSION_ABYDON_ATTRIBUTE_FULL, transformAttribute);
 
 	data.expressions = [];
-	data.strings = [] as never;
+	data.strings = [];
 
 	return data.template;
 }
