@@ -6,10 +6,11 @@ import {
 	ARRAY_COMPARISON_REMOVED,
 	NAME_FRAGMENT,
 	NAME_FRAGMENTS,
+	SYMBOL,
 } from '../constants';
-import type {Fragment} from '../fragment';
-import type {Fragments} from '../fragments';
-import type {FragmentData} from '../models';
+import type {Fragment, Fragments, FragmentState} from '../models';
+
+// #region Functions
 
 export function compareArrays(
 	first: unknown[],
@@ -31,6 +32,7 @@ export function compareArrays(
 
 /**
  * Is the value a _Fragment_?
+ *
  * @param value Value to check
  * @returns `true` if the value is a _Fragment_, otherwise `false`
  */
@@ -40,6 +42,7 @@ export function isFragment(value: unknown): value is Fragment {
 
 /**
  * Is the value a _Fragments_ instance?
+ *
  * @param value Value to check
  * @returns `true` if the value is a _Fragments_ instance, otherwise `false`
  */
@@ -50,14 +53,14 @@ export function isFragments(value: unknown): value is Fragments {
 function isNamed(value: unknown, name: string): boolean {
 	return (
 		typeof value === 'object' &&
-		value != null &&
-		name in value &&
-		(value as PlainObject)[name] === true
+		value !== null &&
+		SYMBOL in value &&
+		(value[SYMBOL] as PlainObject).name === name
 	);
 }
 
 export function setComputedValue(
-	data: FragmentData,
+	data: FragmentState,
 	callback: GenericCallback,
 	after: (computation: Computed<unknown>) => void,
 ): void {
@@ -67,3 +70,5 @@ export function setComputedValue(
 
 	after(computation);
 }
+
+// #endregion

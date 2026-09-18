@@ -4,9 +4,11 @@ import {
 	EXPRESSION_EVENT_ATTRIBUTE,
 	WHITESPACE,
 } from './constants';
-import type {FragmentData} from './models';
+import type {FragmentState} from './models';
 
-function handleExpression(data: FragmentData, prefix: string, expression: unknown): string {
+// #region Functions
+
+function handleExpression(data: FragmentState, prefix: string, expression: unknown): string {
 	if (Array.isArray(expression)) {
 		if (EXPRESSION_EVENT_ATTRIBUTE.test(prefix.split(WHITESPACE).at(-1)!)) {
 			return transformExpression(prefix, data.values.push(expression) - 1);
@@ -32,7 +34,7 @@ function handleExpression(data: FragmentData, prefix: string, expression: unknow
 	return asString.trim().length === 0 ? prefix : `${prefix}${asString}`;
 }
 
-export function parse(data: FragmentData): string {
+export function parse(data: FragmentState): string {
 	if (data.template != null) {
 		return data.template;
 	}
@@ -60,3 +62,5 @@ function transformAttribute(_: string, name: string, index: string): string {
 function transformExpression(prefix: string, index: number): string {
 	return `${prefix}<!--abydon.${index}-->`;
 }
+
+// #endregion

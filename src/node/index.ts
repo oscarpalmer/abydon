@@ -1,15 +1,17 @@
 import type {GenericCallback} from '@oscarpalmer/atoms/models';
-import {isReactive, type ReactiveArray} from '@oscarpalmer/mora';
+import {isReactive} from '@oscarpalmer/mora';
 import {isHTMLOrSVGElement} from '@oscarpalmer/toretto/is';
 import {mapAttributes, mapAttributeValue} from '../attribute/index';
-import {EXPRESSION_ABYDON_CONTENT, EXPRESSION_TEXTAREA_VALUE} from '../constants';
-import {Fragments, fragmentsStates, handleFragments} from '../fragments';
+import {EXPRESSION_ABYDON_CONTENT, EXPRESSION_TEXTAREA_VALUE, SYMBOL} from '../constants';
+import {handleFragments} from '../fragments';
 import {isFragment, isFragments, setComputedValue} from '../helpers';
 import {createNodes} from '../helpers/dom';
-import type {FragmentData} from '../models';
+import type {Fragments, FragmentState, InternalFragments} from '../models';
 import {setReactiveValue} from './value';
 
-function mapNode(data: FragmentData, comment: Comment): void {
+// #region Functions
+
+function mapNode(data: FragmentState, comment: Comment): void {
 	const matches = EXPRESSION_ABYDON_CONTENT.exec(comment.textContent);
 	const value = matches == null ? null : data.values[+matches[1]];
 
@@ -18,7 +20,7 @@ function mapNode(data: FragmentData, comment: Comment): void {
 	}
 }
 
-export function mapNodes(data: FragmentData, nodes: ChildNode[]): void {
+export function mapNodes(data: FragmentState, nodes: ChildNode[]): void {
 	const {length} = nodes;
 
 	for (let index = 0; index < length; index += 1) {
@@ -49,7 +51,7 @@ export function mapNodes(data: FragmentData, nodes: ChildNode[]): void {
 	}
 }
 
-function mapTextarea(data: FragmentData, element: HTMLTextAreaElement): boolean {
+function mapTextarea(data: FragmentState, element: HTMLTextAreaElement): boolean {
 	const [, index] =
 		EXPRESSION_TEXTAREA_VALUE.exec(element.textContent) ??
 		EXPRESSION_TEXTAREA_VALUE.exec(element.value) ??
@@ -67,7 +69,7 @@ function mapTextarea(data: FragmentData, element: HTMLTextAreaElement): boolean 
 	return true;
 }
 
-function mapValue(data: FragmentData, comment: Comment, value: unknown): void {
+function mapValue(data: FragmentState, comment: Comment, value: unknown): void {
 	switch (true) {
 		case typeof value === 'function':
 			setComputedNode(data, comment, value as GenericCallback);
@@ -87,7 +89,7 @@ function mapValue(data: FragmentData, comment: Comment, value: unknown): void {
 	}
 }
 
-function replaceComment(data: FragmentData, comment: Comment, value: unknown): void {
+function replaceComment(data: FragmentState, comment: Comment, value: unknown): void {
 	const item = data.items.find(item => item.nodes?.includes(comment));
 	const nodes = createNodes(value);
 
@@ -99,16 +101,16 @@ function replaceComment(data: FragmentData, comment: Comment, value: unknown): v
 	comment.replaceWith(...nodes);
 }
 
-function setComputedNode(data: FragmentData, comment: Comment, callback: GenericCallback): void {
+function setComputedNode(data: FragmentState, comment: Comment, callback: GenericCallback): void {
 	setComputedValue(data, callback, computation => {
 		setReactiveValue(data, comment, computation);
 	});
 }
 
-function setFragmentsNode(data: FragmentData, comment: Comment, fragments: Fragments): void {
-	const state = fragmentsStates.get(fragments)!;
+function setFragmentsNode(data: FragmentState, comment: Comment, fragments: Fragments): void {
+	handleFragments(fragments, false);
 
-	handleFragments(state, false);
-
-	setReactiveValue(data, comment, state.mapped as ReactiveArray<unknown>);
+	setReactiveValue(data, comment, (fragments as InternalFragments)[SYMBOL].mapped);
 }
+
+// #endregion

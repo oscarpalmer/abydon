@@ -12,7 +12,9 @@ import {
 	EXPRESSION_ATTRIBUTE_STYLE_VARIABLE,
 	VALUE_TRUE,
 } from '../constants';
-import type {FragmentData} from '../models';
+import type {FragmentState} from '../models';
+
+// #region Functions
 
 function getStyleValue(value: unknown, unit: string, isVariable: boolean): string | undefined {
 	if (removeStyleValue(value, unit, isVariable)) {
@@ -31,7 +33,7 @@ function removeStyleValue(value: unknown, unit: unknown, isVariable: boolean): b
 }
 
 export function setAttribute(
-	data: FragmentData,
+	data: FragmentState,
 	element: HTMLElement | SVGElement,
 	name: string,
 	value: unknown,
@@ -52,7 +54,7 @@ export function setAttribute(
 }
 
 function setClassValues(
-	data: FragmentData,
+	data: FragmentState,
 	element: HTMLElement | SVGElement,
 	name: string,
 	value: unknown,
@@ -69,7 +71,7 @@ function setClassValues(
 }
 
 function setStyleValues(
-	data: FragmentData,
+	data: FragmentState,
 	element: HTMLElement | SVGElement,
 	name: string,
 	value: unknown,
@@ -88,7 +90,7 @@ function setStyleValues(
 }
 
 function setValue(
-	data: FragmentData,
+	data: FragmentState,
 	element: HTMLElement | SVGElement,
 	name: string,
 	value: unknown,
@@ -98,10 +100,12 @@ function setValue(
 	});
 }
 
-function updateValue(data: FragmentData, value: unknown, updater: (value: unknown) => void): void {
+function updateValue(data: FragmentState, value: unknown, updater: (value: unknown) => void): void {
 	if (isReactive(value)) {
-		data.mora.subscribers.add(value.subscribe(updater));
+		data.mora.subscriptions.add(value.subscribe(updater));
 	} else {
 		updater(value);
 	}
 }
+
+// #endregion

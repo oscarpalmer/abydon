@@ -3,12 +3,11 @@ import {getString} from '@oscarpalmer/atoms/string';
 import type {Reactive} from '@oscarpalmer/mora';
 import {isChildNode} from '@oscarpalmer/toretto/is';
 import {ARRAY_COMPARISON_ADDED, ARRAY_COMPARISON_REMOVED} from '../constants';
-import type {Fragment} from '../fragment';
 import {compareArrays, isFragment} from '../helpers';
 import {createNodes, replaceNodes} from '../helpers/dom';
-import type {FragmentData, FragmentItem} from '../models';
+import type {Fragment, FragmentItem, FragmentState} from '../models';
 
-//
+// #region Types
 
 type ArrayData = {
 	next: ArrayDataIdentifiers;
@@ -45,7 +44,9 @@ type ExtendedItems = {
 	next: Fragment[];
 } & BaseItems;
 
-//
+// #endregion
+
+// #region Functions
 
 function addToArray(
 	identifiers: Identifiers,
@@ -183,6 +184,7 @@ function setArray(item: FragmentItem, comment: Comment, value: unknown[]): Parti
 	if (
 		template.empty ||
 		item.nodes == null ||
+		item.fragments == null ||
 		previous.array.some(identifier => identifier == null)
 	) {
 		const fragments = (item.fragments ?? []).slice();
@@ -208,7 +210,7 @@ function setArray(item: FragmentItem, comment: Comment, value: unknown[]): Parti
 			previous,
 		},
 		{
-			fragments: item.fragments ?? [],
+			fragments: item.fragments,
 			templates: template.items,
 		},
 		item.nodes,
@@ -220,7 +222,7 @@ function setNodes(item: FragmentItem, comment: Comment, next: ChildNode[]): Chil
 }
 
 export function setReactiveValue(
-	data: FragmentData,
+	data: FragmentState,
 	comment: Comment,
 	reactive: Reactive<unknown>,
 ): void {
@@ -228,7 +230,7 @@ export function setReactiveValue(
 
 	item ??= {};
 
-	data.mora.subscribers.add(
+	data.mora.subscriptions.add(
 		reactive.subscribe(value => {
 			if (Array.isArray(value)) {
 				setReactiveValueForArray(item, comment, value);
@@ -271,7 +273,7 @@ function setText(item: FragmentItem, comment: Comment, value?: unknown): ChildNo
 
 	const result = valueIsNullable ? [comment] : [item.text];
 
-	replaceNodes(item.nodes ?? [comment], result);
-
-	return result;
+	return replaceNodes(item.nodes ?? [comment], result);
 }
+
+// #endregion

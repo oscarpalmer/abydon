@@ -116,6 +116,20 @@ test('basic', () => {
 </div>`);
 
 	fragment.remove();
+
+	expect(document.body.innerHTML).toBe('');
+
+	const simple = Abydon.fragment('<p>Simple</p>');
+
+	simple.appendTo(document.body);
+
+	expect(document.body.innerHTML).toBe('<p>Simple</p>');
+
+	simple.remove();
+
+	expect(document.body.innerHTML).toBe('');
+
+	expect(() => Abydon.html(123 as never)).toThrow();
 });
 
 test('get', () => {

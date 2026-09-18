@@ -36,6 +36,14 @@ test('basic', () => {
 
 	expect(document.body.innerHTML).toBe('<p><!--abydon.0--></p>');
 
+	array.set([1, 2, 3]);
+
+	expect(document.body.innerHTML).toBe('<p>123</p>');
+
+	fragments.remove();
+
+	expect(document.body.innerHTML).toBe('<p><!--abydon.0--></p>');
+
 	fragment.remove();
 
 	expect(document.body.innerHTML).toBe('');

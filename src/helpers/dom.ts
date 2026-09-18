@@ -2,6 +2,8 @@ import {getString} from '@oscarpalmer/atoms/string';
 import {isChildNode} from '@oscarpalmer/toretto/is';
 import {isFragment} from './index';
 
+// #region Functions
+
 export function createNodes(value: unknown): ChildNode[] {
 	if (isFragment(value)) {
 		return value.get() as ChildNode[];
@@ -33,3 +35,5 @@ export function replaceNodes(from: ChildNode[], to: ChildNode[]): ChildNode[] {
 
 	return to;
 }
+
+// #endregion

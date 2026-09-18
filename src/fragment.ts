@@ -1,158 +1,174 @@
-import {isPlainObject} from '@oscarpalmer/atoms/is';
+import {isNonTemplateStringsArray, isPlainObject} from '@oscarpalmer/atoms/is';
 import {html} from '@oscarpalmer/toretto/html';
-import {NAME_FRAGMENT, PROPERTY_IDENTIFIER} from './constants';
+import {MESSAGE_FRAGMENT_VALUE, NAME_FRAGMENT, PROPERTY_IDENTIFIER, SYMBOL} from './constants';
 import {handleFragments} from './fragments';
 import {isFragments} from './helpers';
 import {removeNodes} from './helpers/dom';
-import type {FragmentConfiguration, FragmentData} from './models';
+import type {Fragment, FragmentConfiguration, FragmentState, InternalFragment} from './models';
 import {mapNodes} from './node';
 import {parse} from './parse';
 
-export class Fragment {
-	readonly #data: FragmentData;
+// #region Instances
 
-	readonly #configuration: Required<FragmentConfiguration> = {
-		identifier: undefined,
+function Fragment(this: any, strings: TemplateStringsArray, expressions: unknown[]) {
+	this[SYMBOL] = {
+		expressions,
+		strings,
 		cache: true,
+		identifier: undefined,
+		items: [],
+		mora: {
+			subscriptions: new Set(),
+			values: new Set(),
+		},
+		name: NAME_FRAGMENT,
+		values: [],
 	};
+}
 
-	/**
-	 * Is template caching enabled?
-	 */
-	get cache(): boolean {
-		return this.#configuration.cache;
+Fragment.prototype.after = insertFragmentAfter;
+Fragment.prototype.appendTo = appendFragmentTo;
+Fragment.prototype.before = insertFragmentBefore;
+Fragment.prototype.configure = configureFragment;
+Fragment.prototype.get = getFragmentNodes;
+Fragment.prototype.prependTo = prependFragmentTo;
+Fragment.prototype.remove = removeFragment;
+
+Object.defineProperties(Fragment.prototype, {
+	cache: {
+		enumerable: true,
+		get: getFragmentCache,
+	},
+	identifier: {
+		enumerable: true,
+		get: getFragmentIdentifier,
+	},
+});
+
+// #endregion
+
+// #region Functions
+
+function appendFragmentTo(this: InternalFragment, element: Element): void {
+	element.append(...this.get());
+}
+
+function configureFragment(
+	this: InternalFragment,
+	configuration: FragmentConfiguration,
+): InternalFragment {
+	const state = this[SYMBOL];
+
+	const actual = isPlainObject(configuration) ? configuration : {};
+
+	if (PROPERTY_IDENTIFIER in actual) {
+		state.identifier = actual.identifier;
 	}
 
-	/**
-	 * Identifier for the _Fragment_
-	 *
-	 * _An identifier can be used to uniquely identify a Fragment, which helps prevent re-rendering in reactive arrays and Fragments_
-	 */
-	get identifier(): unknown {
-		return this.#configuration.identifier;
+	if (typeof actual.cache === 'boolean') {
+		state.cache = actual.cache;
 	}
 
-	constructor(strings: TemplateStringsArray, expressions: unknown[]) {
-		Object.defineProperty(this, NAME_FRAGMENT, {
-			value: true,
+	return this;
+}
+
+/**
+ * Create a _Fragment_ from a template
+ *
+ * _A Fragment can be used to efficiently render a template that may change over time, only updating the necessary parts of the DOM._
+ *
+ * @example
+ * ```ts
+ * const name = signal('World');
+ * const fragment = fragment`<p>Hello, ${name}!</p>`; // or `html`<p>Hello, ${name}!</p>`
+ * fragment.appendTo(document.body);                  // Renders '<p>Hello, World!</p>'
+ * name.set('Alice');                                 // Replaces 'World' with 'Alice'
+ * ```
+ *
+ * @returns _Fragment_
+ */
+export function fragment(template: TemplateStringsArray, ...values: unknown[]): Fragment;
+
+/**
+ * Create a _Fragment_ from a simple template
+ *
+ * @example
+ * ```ts
+ * const fragment = fragment('<p>Hello, World!</p>'); // or `html`('<p>Hello, World!</p>')
+ * fragment.appendTo(document.body);                  // Renders '<p>Hello, World!</p>'
+ * ```
+ *
+ * @returns _Fragment_
+ */
+export function fragment(template: string): Fragment;
+
+export function fragment(template: string | TemplateStringsArray, ...values: unknown[]): Fragment {
+	if (typeof template !== 'string' && isNonTemplateStringsArray(template)) {
+		throw new TypeError(MESSAGE_FRAGMENT_VALUE);
+	}
+
+	// @ts-expect-error All good, no worries :-)
+	return new Fragment(template, values);
+}
+
+function getFragmentCache(this: InternalFragment): boolean {
+	return this[SYMBOL].cache;
+}
+
+function getFragmentIdentifier(this: InternalFragment): unknown {
+	return this[SYMBOL].identifier;
+}
+
+function getFragmentNodes(this: InternalFragment): ChildNode[] {
+	const state = this[SYMBOL];
+
+	if (state.items.length === 0) {
+		const parsed = parse(state);
+
+		const templated = html(parsed, {
+			cache: state.cache,
 		});
 
-		this.#data = {
-			expressions,
-			strings,
-			items: [],
-			mora: {
-				subscribers: new Set(),
-				values: new Set(),
-			},
-			values: [],
-		};
-	}
+		state.items.splice(
+			0,
+			state.items.length,
+			...templated.map(node => ({
+				nodes: [node as ChildNode],
+			})),
+		);
 
-	/**
-	 * Insert the _Fragment_ after the given element
-	 * @param element Element to insert after
-	 */
-	after(element: Element): void {
-		element.after(...this.get());
-	}
-
-	/**
-	 * Append the _Fragment_ to the given element
-	 * @param element Element to append to
-	 */
-	appendTo(element: Element): void {
-		element.append(...this.get());
-	}
-
-	/**
-	 * Insert the _Fragment_ before the given element
-	 * @param element Element to insert before
-	 */
-	before(element: Element): void {
-		element.before(...this.get());
-	}
-
-	/**
-	 * Configure the _Fragment_
-	 *
-	 * _Returns the Fragment instance for chaining_
-	 * @param configuration Configuration options
-	 * @returns _Fragment_
-	 */
-	configure(configuration: FragmentConfiguration): Fragment {
-		const actual = isPlainObject(configuration) ? configuration : {};
-
-		if (PROPERTY_IDENTIFIER in actual) {
-			this.#configuration.identifier = actual.identifier;
-		}
-
-		if (typeof actual.cache === 'boolean') {
-			this.#configuration.cache = actual.cache;
-		}
-
-		return this;
-	}
-
-	/**
-	 * Get a list of the _Fragment_'s nodes
-	 * @returns List of nodes
-	 */
-	get(): ChildNode[] {
-		const data = this.#data;
-
-		if (data.items.length === 0) {
-			const parsed = parse(data);
-
-			const templated = html(parsed, {
-				cache: this.#configuration.cache,
-			});
-
-			data.items.splice(
-				0,
-				data.items.length,
-				...templated.map(node => ({
-					nodes: [node as ChildNode],
-				})),
-			);
-
-			mapNodes(
-				data,
-				data.items.flatMap(item => item.nodes!),
-			);
-		}
-
-		return data.items.flatMap(
-			item => item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes!,
+		mapNodes(
+			state,
+			state.items.flatMap(item => item.nodes!),
 		);
 	}
 
-	/**
-	 * Prepend the _Fragment_ to the given element
-	 * @param element Element to prepend to
-	 */
-	prependTo(element: Element): void {
-		element.prepend(...this.get());
-	}
-
-	/**
-	 * Remove the _Fragment_ _(and all its descendants)_ from the _DOM_
-	 *
-	 * - _Any events, reactive values, and Fragments will also be cleaned up and removed_
-	 * - _After being removed, the Fragment can be re-inserted into the DOM_
-	 */
-	remove(): void {
-		removeFragment(this.#data);
-	}
+	return state.items.flatMap(
+		item => item.fragments?.flatMap(fragment => fragment.get()) ?? item.nodes!,
+	);
 }
 
-function removeFragment(data: FragmentData): void {
-	removeMora(data);
+function insertFragmentAfter(this: InternalFragment, element: Element): void {
+	element.after(...this.get());
+}
 
-	let {length} = data.items;
+function insertFragmentBefore(this: InternalFragment, element: Element): void {
+	element.before(...this.get());
+}
+
+function prependFragmentTo(this: InternalFragment, element: Element): void {
+	element.prepend(...this.get());
+}
+
+function removeFragment(this: InternalFragment): void {
+	const state = this[SYMBOL];
+
+	removeMora(state);
+
+	let {length} = state.items;
 
 	for (let index = 0; index < length; index += 1) {
-		const {fragments, nodes} = data.items[index];
+		const {fragments, nodes} = state.items[index];
 		const fragmentsLength = fragments?.length ?? 0;
 
 		for (let fragmentIndex = 0; fragmentIndex < fragmentsLength; fragmentIndex += 1) {
@@ -162,12 +178,12 @@ function removeFragment(data: FragmentData): void {
 		removeNodes(nodes!);
 	}
 
-	data.items.length = 0;
+	state.items.length = 0;
 
-	length = data.values.length;
+	length = state.values.length;
 
 	for (let index = 0; index < length; index += 1) {
-		const value = data.values[index];
+		const value = state.values[index];
 
 		if (isFragments(value)) {
 			handleFragments(value, true);
@@ -175,13 +191,21 @@ function removeFragment(data: FragmentData): void {
 	}
 }
 
-function removeMora(data: FragmentData): void {
-	const unsubscribers = [...data.mora.subscribers];
+function removeMora(state: FragmentState): void {
+	const subscriptions = [...state.mora.subscriptions];
 
-	data.mora.subscribers.clear();
-	data.mora.values.clear();
+	state.mora.subscriptions.clear();
+	state.mora.values.clear();
 
-	for (const unsubscribe of unsubscribers) {
-		unsubscribe();
+	for (const subscription of subscriptions) {
+		subscription.unsubscribe();
 	}
 }
+
+// #endregion
+
+// #region Exports
+
+export {fragment as html};
+
+// #endregion

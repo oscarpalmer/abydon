@@ -9,23 +9,25 @@ import {
 	PROPERTY_VALUE,
 } from '../constants';
 import {setComputedValue} from '../helpers';
-import type {FragmentData} from '../models';
+import type {FragmentState} from '../models';
 import {mapEvent} from '../node/event';
 import {setAttribute} from './value';
 import {isNullableOrWhitespace} from '@oscarpalmer/atoms/is';
+
+// #region Functions
 
 function compareAttributes(first: Attr, second: Attr): number {
 	return first.name.localeCompare(second.name);
 }
 
-function getValue(data: FragmentData, original: string): unknown {
+function getValue(data: FragmentState, original: string): unknown {
 	const matches = EXPRESSION_ABYDON_CONTENT.exec(original);
 
 	return matches == null ? original : data.values[+matches[1]];
 }
 
 export function mapAttributeValue(
-	data: FragmentData,
+	data: FragmentState,
 	element: HTMLElement | SVGElement,
 	name: string,
 	value: unknown,
@@ -44,7 +46,7 @@ export function mapAttributeValue(
 }
 
 export function mapAttributes(
-	data: FragmentData,
+	data: FragmentState,
 	element: HTMLElement | SVGElement,
 	ignoreValue: boolean,
 ): void {
@@ -80,7 +82,7 @@ export function mapAttributes(
 }
 
 function setComputedAttribute(
-	data: FragmentData,
+	data: FragmentState,
 	element: HTMLElement | SVGElement,
 	name: string,
 	callback: GenericCallback,
@@ -89,3 +91,5 @@ function setComputedAttribute(
 		setAttribute(data, element, name, computation);
 	});
 }
+
+// #endregion

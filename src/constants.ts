@@ -1,3 +1,5 @@
+// #region Variables
+
 export const ARRAY_COMPARISON_ADDED = 'added';
 
 export const ARRAY_COMPARISON_DISSIMILAR = 'dissimilar';
@@ -9,12 +11,6 @@ export const ATTRIBUTE_CLASS_PREFIX_LENGTH = 'class.'.length;
 export const ATTRIBUTE_NAME_DELIMITER = '.';
 
 export const CHANGE_INPUTS = new Set(['checkbox', 'radio']);
-
-export const ERROR_FRAGMENT = 'Fragment function must return a Fragment instance';
-
-export const ERROR_IDENTIFIER_DUPLICATE = "Duplicate identifier found: '<>'";
-
-export const ERROR_IDENTIFIER_TYPE = 'Identifier cannot be null or undefined';
 
 export const EVENT_CHANGE = 'change';
 
@@ -63,16 +59,36 @@ export const EXPRESSION_EVENT_PREFIX = /^@/;
 
 export const EXPRESSION_TEXTAREA_VALUE = /(?:<|&lt;)!--abydon\.(\d+)--(?:>|&gt;)/;
 
-export const NAME_FRAGMENT = '$fragment';
+export const MESSAGE_FRAGMENT_VALUE =
+	'Fragment template must be a string or a template strings array';
 
-export const NAME_FRAGMENTS = '$fragments';
+export const MESSAGE_FRAGMENTS_FRAGMENT_RESULT =
+	'Fragment function must return a Fragment instance';
+
+export const MESSAGE_FRAGMENTS_FRAGMENT_TYPE = 'Fragment handler must be a function';
+
+export const MESSAGE_FRAGMENTS_IDENTIFIER_RESULT_DUPLICATE = "Duplicate identifier found: '<>'";
+
+export const MESSAGE_FRAGMENTS_IDENTIFIER_RESULT_TYPE = 'Identifier cannot be null or undefined';
+
+export const MESSAGE_FRAGMENTS_IDENTIFIER_TYPE = 'Identifier handler must be a function';
+
+export const MESSAGE_FRAGMENTS_VALUE = 'Fragments array must be a reactive array';
+
+export const NAME_FRAGMENT = 'fragment';
+
+export const NAME_FRAGMENTS = 'fragments';
 
 export const PROPERTY_IDENTIFIER = 'identifier';
 
 export const PROPERTY_VALUE = 'value';
+
+export const SYMBOL = Symbol('abydon');
 
 export const TEMPLATE_ITEM = '<>';
 
 export const VALUE_TRUE = 'true';
 
 export const WHITESPACE = /\s+/g;
+
+// #endregion

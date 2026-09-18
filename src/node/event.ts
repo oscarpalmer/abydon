@@ -13,6 +13,8 @@ import {
 	EXPRESSION_EVENT_OPTIONS_ONCE,
 } from '../constants';
 
+// #region Functions
+
 function getOptions(options: string): AddEventListenerOptions {
 	const parts = options.split(EVENT_OPTIONS_DELIMITER);
 
@@ -53,3 +55,5 @@ export function mapEvent(element: HTMLElement | SVGElement, name: string, value:
 		}
 	}
 }
+
+// #endregion
